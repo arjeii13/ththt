@@ -1,213 +1,252 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>CAN Node Dashboard</title>
 <style>
-/* CSS Reset e Variabili Dark Theme */
+/* Reset and Compact Dark Theme Variables */
 :root {
-  --bg-color: #121212;
-  --panel-color: #1e1e1e;
-  --border-color: #333333;
-  --text-main: #f5f5f5;
-  --text-dim: #999999;
-  --accent-green: #00c853;
-  --accent-red: #d50000;
-  --terminal-bg: #0a0a0a;
+  --bg-color: #0c0c0f;
+  --card-bg: #15151a;
+  --border-color: #2a2a35;
+  --text-main: #f0f0f5;
+  --text-dim: #8b8b9d;
+  --accent-green: #34c759;
+  --accent-red: #ff3b30;
+  --warning-bg: #2d1114;
+  --warning-border: #5c1e22;
+  --terminal-bg: #09090b;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--bg-color);
   color: var(--text-main);
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
-  overflow: hidden; /* Blocca lo scroll della pagina (Single-Page) */
+  min-height: 100vh;
+  overflow-y: auto;
+  padding-bottom: 30px;
 }
 
-/* 1. HEADER (Fisso in alto) */
+/* 1. HEADER */
 header {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 16px 20px; background: var(--bg-color); border-bottom: 1px solid var(--border-color);
-  flex-shrink: 0;
+  padding: 12px 16px; background: var(--bg-color);
+  position: sticky; top: 0; z-index: 10;
+  border-bottom: 1px solid var(--border-color);
 }
-.title-box h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.5px; }
-.title-box p { font-size: 12px; color: var(--text-dim); }
-#btn-ble {
-  background: var(--panel-color); color: var(--text-main);
-  border: 1px solid var(--border-color); border-radius: 24px;
-  padding: 8px 16px; font-size: 13px; font-weight: 600;
-  display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s;
+.title-box h1 { font-size: 16px; font-weight: 600; }
+.title-box p { font-size: 11px; color: var(--text-dim); }
+
+.header-actions { display: flex; gap: 8px; align-items: center; }
+
+/* Header Pills */
+.pill-btn {
+  background: var(--card-bg); color: var(--text-main);
+  border: 1px solid var(--border-color); border-radius: 16px;
+  padding: 6px 12px; font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s;
 }
-#btn-ble .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); }
-#btn-ble.connecting .dot { background: #ffb300; animation: pulse 1s infinite alternate; }
-#btn-ble.connected { background: rgba(0,200,83,0.1); border-color: var(--accent-green); color: var(--accent-green); }
+.pill-btn:disabled { opacity: 0.4; pointer-events: none; }
+.pill-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); transition: 0.2s;}
+
+/* BLE States */
+#btn-ble.connecting .dot { background: #ffcc00; animation: pulse 1s infinite alternate; }
+#btn-ble.connected { background: rgba(52, 199, 89, 0.1); border-color: var(--accent-green); color: var(--accent-green); }
 #btn-ble.connected .dot { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
+
+/* Stress Test State */
+#btn-stress { color: var(--text-dim); }
+#btn-stress.active { background: rgba(255, 59, 48, 0.1); border-color: var(--accent-red); color: var(--accent-red); }
+
 @keyframes pulse { from { opacity: 0.4; } to { opacity: 1; } }
 
-/* 2. DASHBOARD TELEMETRIA & GRAFICO */
-#telemetry { flex-shrink: 0; padding: 16px 20px; border-bottom: 1px solid var(--border-color); background: var(--panel-color); }
-.chart-container { width: 100%; height: 70px; margin-bottom: 12px; position: relative; }
+/* Main Container & Cards */
+main { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; }
+.card-title { font-size: 13px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+
+/* 2. DASHBOARD & CHART */
+.chart-container { width: 100%; height: 60px; margin-top: 10px; }
 canvas { width: 100%; height: 100%; display: block; }
-.badges { display: flex; gap: 8px; flex-wrap: wrap; }
-.badge {
-  background: var(--bg-color); border: 1px solid var(--border-color);
-  border-radius: 12px; padding: 4px 10px; font-size: 11px; font-weight: 600; color: var(--text-dim);
-}
+.badge { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; font-size: 10px; font-weight: 600; color: var(--text-dim); }
 .badge.active { border-color: var(--accent-green); color: var(--text-main); }
 
-/* 3. CONTROLLI MODIFICA BUS */
-#controls { flex-shrink: 0; padding: 16px 20px; overflow-y: auto; }
-.controls-list { display: flex; flex-direction: column; gap: 12px; }
-.control-row {
-  display: flex; justify-content: space-between; align-items: center;
-  background: var(--panel-color); padding: 12px 16px; border-radius: 12px;
-  border: 1px solid var(--border-color); transition: opacity 0.3s;
+/* 3. DRIVING PROFILE */
+.profile-group { display: flex; gap: 4px; background: var(--bg-color); padding: 4px; border-radius: 8px; border: 1px solid var(--border-color); }
+.prof-btn { flex: 1; text-align: center; padding: 8px 0; font-size: 11px; font-weight: 600; color: var(--text-dim); border-radius: 6px; transition: 0.2s; }
+.prof-btn.active { background: rgba(52, 199, 89, 0.15); color: var(--accent-green); border: 1px solid rgba(52, 199, 89, 0.3); }
+.profile-desc { font-size: 11px; color: var(--text-dim); margin-top: 10px; text-align: center; font-style: italic; }
+
+/* 4. INJECTION CONTROLS */
+.card-header-flex { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px; }
+.master-desc { font-size: 10px; color: var(--text-dim); text-align: right;}
+
+/* Master Pill Toggle COMPACT */
+.master-pill {
+  background: transparent; color: var(--text-main);
+  border: 1px solid var(--border-color); border-radius: 14px;
+  padding: 4px 10px; font-size: 12px; font-weight: 600; text-transform: uppercase;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s;
 }
+.master-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); transition: 0.2s; }
+.master-pill.active { background: rgba(52, 199, 89, 0.1); border-color: var(--accent-green); color: var(--accent-green); }
+.master-pill.active .dot { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
+
+.controls-list { display: flex; flex-direction: column; gap: 0; }
+.control-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color); transition: opacity 0.3s; }
+.control-row:last-child { border-bottom: none; padding-bottom: 0; }
+.control-row:first-child { padding-top: 0; }
 .control-row.dimmed { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
-.control-info h3 { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+.control-info h3 { font-size: 14px; font-weight: 500; margin-bottom: 2px; display: flex; align-items: center; gap: 6px;}
 .control-info p { font-size: 11px; color: var(--text-dim); }
 
-/* Toggle Switch iOS Style */
-.toggle { position: relative; display: inline-block; width: 48px; height: 28px; flex-shrink: 0; }
+/* Toggle Switch */
+.toggle { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
 .toggle input { opacity: 0; width: 0; height: 0; }
-.slider {
-  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #444; transition: .3s; border-radius: 28px;
-}
-.slider:before {
-  position: absolute; content: ""; height: 22px; width: 22px; left: 3px; bottom: 3px;
-  background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-.toggle input:checked + .slider { background-color: var(--text-main); }
-.toggle input:checked + .slider:before { transform: translateX(20px); background-color: #121212; }
-/* Danger Switch (Rosso) */
-.toggle.danger input:checked + .slider { background-color: var(--accent-red); }
-.toggle.danger input:checked + .slider:before { background-color: #fff; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #393946; transition: .3s; border-radius: 24px; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+.toggle input:checked + .slider { background-color: var(--accent-green); }
+.toggle input:checked + .slider:before { transform: translateX(20px); }
 
-/* 4. TERMINALE LOG */
-#terminal {
-  flex-grow: 1; display: flex; flex-direction: column;
-  background: var(--terminal-bg); border-top: 1px solid var(--border-color); overflow: hidden;
-}
-.terminal-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 20px; background: #181818; border-bottom: 1px solid #222; font-size: 11px; color: var(--text-dim); flex-shrink: 0;
-}
-.terminal-header span { font-family: monospace; }
-.terminal-header button {
-  background: none; border: none; color: var(--accent-red); font-size: 11px; font-weight: bold; cursor: pointer; padding: 4px;
-}
-.log-container {
-  flex-grow: 1; overflow-y: auto; padding: 12px 20px;
-  font-family: "JetBrains Mono", "Fira Code", monospace; font-size: 12px; line-height: 1.5; color: #ccc;
-  word-break: break-all;
-}
-.log-line { margin-bottom: 4px; }
-.t-sys { color: #4fc3f7; font-weight: bold; }
-.t-ble { color: #ce93d8; font-weight: bold; }
-.t-tel { color: #81c784; }
-.t-err { color: #ef5350; font-weight: bold; }
+/* 5. LIVE LOG (TWO COLUMNS COMPACT) */
+#terminal-card { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.terminal-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); font-size: 11px; color: var(--text-dim); }
+.terminal-header button { background: none; border: none; color: var(--text-dim); font-size: 10px; cursor: pointer; text-transform: uppercase; font-weight: 600;}
+
+.log-table-wrapper { height: 240px; overflow-y: auto; background: var(--terminal-bg); }
+.log-table { width: 100%; border-collapse: collapse; font-family: ui-monospace, "JetBrains Mono", monospace; font-size: 10px; color: #d0d0d0; }
+.log-table th { position: sticky; top: 0; background: var(--card-bg); color: var(--text-dim); text-align: left; padding: 6px 10px; font-size: 9px; text-transform: uppercase; z-index: 1; border-bottom: 1px solid var(--border-color); font-weight: 600;}
+.log-table td { padding: 6px 10px; border-bottom: 1px solid #1a1a24; vertical-align: top; }
+.log-table tr:last-child td { border-bottom: none; }
+.col-time { color: #777; width: 60px; }
+.col-msg { word-break: break-word; line-height: 1.4; }
+
+/* Inline Telemetry Badges */
+.telemetry-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.t-badge { background: #15151e; padding: 2px 5px; border-radius: 4px; border: 1px solid #2a2a35; display: inline-flex; align-items: center; gap: 3px; font-size: 10px;}
+.t-badge.alert { border-color: rgba(255, 59, 48, 0.4); color: #ff8a8a; }
+.t-badge.on { color: var(--accent-green); }
+.t-badge.off { color: #666; }
+
+/* 6. WARNING BOX */
+.warning-box { background: var(--warning-bg); border: 1px solid var(--warning-border); border-radius: 12px; padding: 12px; font-size: 11px; color: #ff8a8a; line-height: 1.4; }
+.warning-box strong { color: var(--accent-red); font-size: 12px; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;}
 </style>
 </head>
 <body>
 
-  <!-- HEADER -->
   <header>
     <div class="title-box">
       <h1>CAN Node</h1>
       <p>Tesla HW4 Mod</p>
     </div>
-    <button id="btn-ble">
-      <div class="dot"></div>
-      <span id="ble-label">Connetti</span>
-    </button>
+    <div class="header-actions">
+      <button id="btn-stress" class="pill-btn" disabled>
+        <span>🧪</span> <span id="lbl-stress">Stress Test</span>
+      </button>
+      <button id="btn-ble" class="pill-btn">
+        <div class="dot"></div>
+        <span id="ble-label">Connect</span>
+      </button>
+    </div>
   </header>
 
-  <!-- DASHBOARD -->
-  <section id="telemetry">
-    <div class="chart-container">
-      <canvas id="traffic-chart"></canvas>
-    </div>
-    <div class="badges">
-      <div class="badge" id="badge-ui">Semafori UI: --</div>
-      <div class="badge" id="badge-prof">Profilo: --</div>
-      <div class="badge" id="badge-src">Fonte: --</div>
-    </div>
-  </section>
+  <main>
+    <section class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card-title" style="margin-bottom: 0;">Telemetry & Bus Load</div>
+        <div class="badge" id="badge-src" style="margin:0;">Source: --</div>
+      </div>
+      <div class="chart-container">
+        <canvas id="traffic-chart"></canvas>
+      </div>
+    </section>
 
-  <!-- CONTROLS -->
-  <section id="controls">
-    <div class="controls-list">
-      <!-- Master -->
-      <div class="control-row" id="row-master" style="border-color: #555;">
-        <div class="control-info">
-          <h3>Master Switch</h3>
-          <p>Disattiva per pass-through trasparente</p>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="chk-master" disabled>
-          <span class="slider"></span>
-        </label>
+    <section class="card">
+      <div class="card-title">Driving Profile</div>
+      <div class="profile-group">
+        <div class="prof-btn" id="prof-4">Sloth</div>
+        <div class="prof-btn" id="prof-3">Chill</div>
+        <div class="prof-btn" id="prof-1">Normal</div>
+        <div class="prof-btn" id="prof-2">Hurry</div>
+        <div class="prof-btn" id="prof-0">Max</div>
       </div>
-      <!-- Features -->
-      <div class="control-row slave-row">
-        <div class="control-info">
-          <h3>FSD Injection</h3>
-          <p>Forza flag FSD (Bit 46, 59, 60)</p>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="chk-fsd" disabled>
-          <span class="slider"></span>
-        </label>
-      </div>
-      <div class="control-row slave-row">
-        <div class="control-info">
-          <h3>Nag Suppression</h3>
-          <p>Silenzia allarme volante (Bit 19, 47)</p>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="chk-nag" disabled>
-          <span class="slider"></span>
-        </label>
-      </div>
-      <div class="control-row slave-row">
-        <div class="control-info">
-          <h3>ISA Chimes Mute</h3>
-          <p>Muta allarmi limite velocità (ID 921)</p>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="chk-isa" disabled>
-          <span class="slider"></span>
-        </label>
-      </div>
-      <div class="control-row slave-row">
-        <div class="control-info">
-          <h3 style="color: var(--accent-red);">Stress Test</h3>
-          <p>Genera traffico finto (Uso a banco)</p>
-        </div>
-        <label class="toggle danger">
-          <input type="checkbox" id="chk-stress" disabled>
-          <span class="slider"></span>
-        </label>
-      </div>
-    </div>
-  </section>
+      <div id="profile-desc" class="profile-desc">Waiting for telemetry...</div>
+    </section>
 
-  <!-- TERMINALE -->
-  <section id="terminal">
-    <div class="terminal-header">
-      <span>>_ /dev/ttyUSB0</span>
-      <button onclick="clearTerminal()">CLEAR</button>
-    </div>
-    <div class="log-container" id="log-container"></div>
-  </section>
+    <section class="card">
+      <div class="card-header-flex">
+        <button id="btn-master" class="master-pill" disabled>
+          <div class="dot"></div> <span>CAN Injection</span>
+        </button>
+        <span class="master-desc">Disable for pass-through</span>
+      </div>
+
+      <div class="controls-list">
+        <div class="control-row slave-row">
+          <div class="control-info">
+            <h3>🤖 FSD Active</h3>
+            <p>Injects FSD logic onto the data bus</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="chk-fsd" disabled>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="control-row slave-row">
+          <div class="control-info">
+            <h3>🛞 Nag Suppression</h3>
+            <p>Silences the steering wheel prompts</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="chk-nag" disabled>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="control-row slave-row">
+          <div class="control-info">
+            <h3>🔇 ISA Chimes Mute</h3>
+            <p>Mutes speed limit audible warnings</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="chk-isa" disabled>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="terminal-card">
+      <div class="terminal-header">
+        <span>System Logs (Last 60 events)</span>
+        <button onclick="clearTerminal()">Clear</button>
+      </div>
+      <div class="log-table-wrapper" id="log-wrapper">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th class="col-time">Time</th>
+              <th class="col-msg">Details</th>
+            </tr>
+          </thead>
+          <tbody id="log-container"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="warning-box">
+      <strong>⚠️ Safety Warning</strong>
+      CAN bus writes can affect vehicle behavior. Always test with serial monitor first. Never drive with untested configurations. Remove device if any unexpected behavior occurs.
+    </section>
+
+  </main>
 
 <script>
 // ==========================================
-// CONFIGURAZIONE BLE E VARIABILI
+// BLE CONFIG & VARIABLES
 // ==========================================
 const SVC_UUID = 'abcd0001-1234-5678-90ab-cdef12345678';
 const CMD_UUID = 'abcd0002-1234-5678-90ab-cdef12345678';
@@ -217,79 +256,136 @@ let bleDevice = null;
 let cmdChar = null;
 let wakeLock = null;
 
-const profiles = {0:'Max', 1:'Normal', 2:'Hurry', 3:'Chill', 4:'Sloth'};
+let isMasterActive = false;
+let isStressTestActive = false;
+let masterWasActiveBeforeStress = false;
+
+// Profile Descriptions
+const profileDescriptions = {
+  '4': "Sloth: Drives under the speed limit.",
+  '3': "Chill: Drives above the speed limit, minimizes lane changes.",
+  '1': "Normal: Drives at normal speed, matches traffic flow.",
+  '2': "Hurry: Drives faster, makes more frequent lane changes.",
+  '0': "Max: Drives quickly with the most frequent lane changes."
+};
 
 // ==========================================
-// FUNZIONI UI / HAPTIC
+// UI / HAPTIC FUNCTIONS
 // ==========================================
 function vibrate() {
-  if (navigator.vibrate) navigator.vibrate(50);
+  if (navigator.vibrate) navigator.vibrate(40);
 }
 
-// Request Screen Wake Lock
 async function requestWakeLock() {
   try {
     if ('wakeLock' in navigator) {
       wakeLock = await navigator.wakeLock.request('screen');
-      printLog("[SISTEMA] Wake Lock attivato (Schermo sempre acceso).\n");
+      printLog("[SISTEMA] Wake Lock activated.");
     }
   } catch (err) {
-    printLog(`[ERRORE CRITICO] Wake Lock fallito: ${err.name}\n`);
+    printLog(`[ERRORE CRITICO] Wake Lock failed: ${err.name}`);
   }
 }
 
 // ==========================================
-// GESTIONE TERMINALE LOG & PARSING
+// TERMINAL MANAGEMENT (2 COLUMNS)
 // ==========================================
 const logContainer = document.getElementById('log-container');
+const logWrapper = document.getElementById('log-wrapper');
 
 function clearTerminal() { logContainer.innerHTML = ''; vibrate(); }
 
+function getTimestamp() {
+  const now = new Date();
+  return `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+}
+
 function printLog(text) {
-  // Syntax Highlighting basato sui Tag
-  let formatted = text
-    .replace(/\[SISTEMA\]/g, '<span class="t-sys">[SISTEMA]</span>')
-    .replace(/\[BLE\]/g, '<span class="t-ble">[BLE]</span>')
-    .replace(/\[TELEMETRIA\]/g, '<span class="t-tel">[TELEMETRIA]</span>')
-    .replace(/\[ERRORE CRITICO\]/g, '<span class="t-err">[ERRORE CRITICO]</span>');
+  text = text.trim();
+  if(!text) return;
+
+  let msgHtml = '';
+  let isTelemetry = false;
+
+  // Telemetry Parsing
+  if (text.includes('[TELEMETRIA]')) {
+    const regex = /\[TELEMETRIA\] Fonte: (.*?) \| Traffico elaborato: (\d+) msg\/s \| Stato Sistema: (.*?) \| FSD su Schermo: (.*?) \| FSD Mod: (.*?) \| Nag Mod: (.*?) \| Prof\. Vel: (\d+) \| Avvisi Acustici: (.*)/;
+    const match = text.match(regex);
+    
+    if (match) {
+      isTelemetry = true;
+      const isReal = match[1] === 'VEICOLO REALE';
+      const traf = match[2];
+      const sysOn = match[3] === 'ATTIVO';
+      const fsdUiOn = match[4] === 'ACCESO';
+      const fsdModOn = match[5] === 'ATTIVO';
+      const nagOn = match[6] === 'ATTIVO';
+      const prof = match[7];
+      const isaOn = match[8] === 'SILENZIATI';
+
+      // Build inline Badges for Details Column
+      msgHtml = `
+      <div class="telemetry-row">
+        <span class="t-badge ${!isReal ? 'alert' : ''}" title="Source">${isReal ? '🚗 Real' : '🧪 Sim'}</span>
+        <span class="t-badge" title="Traffic">📊 ${traf}/s</span>
+        <span class="t-badge ${sysOn ? 'on' : 'off'}" title="Master">🔌 ${sysOn ? 'ON' : 'OFF'}</span>
+        <span class="t-badge ${fsdUiOn ? 'on' : 'off'}" title="FSD UI (Screen)">🚦 ${fsdUiOn ? 'ON' : 'OFF'}</span>
+        <span class="t-badge ${fsdModOn ? 'on' : 'off'}" title="FSD Injection">🤖 ${fsdModOn ? 'ON' : 'OFF'}</span>
+        <span class="t-badge ${nagOn ? 'on' : 'off'}" title="Nag Suppression">🛞 ${nagOn ? 'Muted' : 'Norm'}</span>
+        <span class="t-badge" title="Speed Profile">🏎️ P${prof}</span>
+        <span class="t-badge ${isaOn ? 'on' : 'off'}" title="ISA Alarms">🔇 ${isaOn ? 'Muted' : 'Norm'}</span>
+      </div>`;
+      
+      // Update UI Components
+      addGraphData(parseInt(traf, 10));
+      document.getElementById('badge-src').innerText = 'Source: ' + (isReal ? 'REAL' : 'SYNTHETIC');
+      if(!isReal) document.getElementById('badge-src').classList.add('active');
+      else document.getElementById('badge-src').classList.remove('active');
+
+      document.querySelectorAll('.prof-btn').forEach(btn => btn.classList.remove('active'));
+      const activeProfBtn = document.getElementById('prof-' + prof);
+      if(activeProfBtn) activeProfBtn.classList.add('active');
+      
+      document.getElementById('profile-desc').innerText = profileDescriptions[prof] || "Select a profile to see details.";
+    }
+  } 
+
+  // Standard Logs Formatting (Applying correct single emoji based on tags)
+  if (!isTelemetry) {
+    let typeEmoji = '⚙️';
+    let cleanMsg = text.replace(/\[SISTEMA\]/g, '').trim();
+
+    if (text.includes('[BLE]')) {
+      typeEmoji = '🔵';
+      cleanMsg = text.replace(/\[BLE\]/g, '').trim();
+    } else if (text.includes('[ERRORE CRITICO]')) {
+      typeEmoji = '🔴';
+      cleanMsg = `<span style="color:var(--accent-red)">${text.replace(/\[ERRORE CRITICO\]/g, '').trim()}</span>`;
+    }
+    msgHtml = `${typeEmoji} ${cleanMsg}`;
+  }
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td class="col-time">${getTimestamp()}</td><td class="col-msg">${msgHtml}</td>`;
+  logContainer.appendChild(tr);
   
-  const div = document.createElement('div');
-  div.className = 'log-line';
-  div.innerHTML = formatted;
-  logContainer.appendChild(div);
-  
-  // Limita a 200 righe per non saturare la RAM
-  if (logContainer.childNodes.length > 200) {
+  // Keep last 60 records
+  if (logContainer.childNodes.length > 60) {
     logContainer.removeChild(logContainer.firstChild);
   }
-  // Auto-scroll a fine pagina
-  logContainer.scrollTop = logContainer.scrollHeight;
-
-  // Estrazione dati per Dashboard (se è un log di telemetria)
-  if (text.includes('[TELEMETRIA]')) {
-    const traf = text.match(/Traffico elaborato: (\d+) msg\/s/);
-    if (traf) addGraphData(parseInt(traf[1], 10));
-
-    const ui = text.match(/FSD su Schermo: (ACCESO|SPENTO)/);
-    if (ui) document.getElementById('badge-ui').innerText = 'Semafori UI: ' + ui[1];
-
-    const prof = text.match(/Prof\. Vel: (\d+)/);
-    if (prof) document.getElementById('badge-prof').innerText = 'Profilo: ' + (profiles[prof[1]] || prof[1]);
-
-    const src = text.match(/Fonte: (VEICOLO REALE|SIMULATORE SINTETICO)/);
-    if (src) document.getElementById('badge-src').innerText = 'Fonte: ' + (src[1] === 'VEICOLO REALE' ? 'REALE' : 'SINTETICO');
-  }
+  
+  // Auto-scroll wrapper
+  logWrapper.scrollTop = logWrapper.scrollHeight;
 }
 
 // ==========================================
-// GRAFICO CANVAS (Super Leggero, No Librerie)
+// CHART CANVAS (60 Seconds)
 // ==========================================
 const canvas = document.getElementById('traffic-chart');
 const ctx = canvas.getContext('2d');
-const maxPoints = 30; // Finestra scorrevole ultimi 30 pacchetti
+const maxPoints = 60; 
 let chartData = Array(maxPoints).fill(0);
 
-// Auto-ridimensionamento Canvas
 function resizeCanvas() {
   canvas.width = canvas.parentElement.clientWidth;
   canvas.height = canvas.parentElement.clientHeight;
@@ -308,7 +404,7 @@ function drawChart() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (chartData.length < 2) return;
 
-  const maxVal = Math.max(...chartData, 100); // Base asse Y (minimo 100)
+  const maxVal = Math.max(...chartData, 100);
   const stepX = canvas.width / (maxPoints - 1);
   
   ctx.beginPath();
@@ -316,21 +412,19 @@ function drawChart() {
 
   for (let i = 0; i < chartData.length; i++) {
     const x = i * stepX;
-    const y = canvas.height - ((chartData[i] / maxVal) * canvas.height * 0.9); // 10% di padding top
+    const y = canvas.height - ((chartData[i] / maxVal) * canvas.height * 0.9);
     ctx.lineTo(x, y);
   }
   
   ctx.lineTo(canvas.width, canvas.height);
   ctx.closePath();
 
-  // Gradiente Sotto Linea
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, 'rgba(0, 200, 83, 0.4)');
-  gradient.addColorStop(1, 'rgba(0, 200, 83, 0.0)');
+  gradient.addColorStop(0, 'rgba(52, 199, 89, 0.3)');
+  gradient.addColorStop(1, 'rgba(52, 199, 89, 0.0)');
   ctx.fillStyle = gradient;
   ctx.fill();
 
-  // Linea principale verde
   ctx.beginPath();
   for (let i = 0; i < chartData.length; i++) {
     const x = i * stepX;
@@ -338,70 +432,103 @@ function drawChart() {
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }
-  ctx.strokeStyle = '#00c853';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#34c759';
+  ctx.lineWidth = 1.5;
   ctx.stroke();
 }
 
 // ==========================================
-// GESTIONE STATO E SWITCH CONTROLLI
+// STATE & COMMANDS MANAGEMENT
 // ==========================================
 function parseState(str) {
   if (str.length < 5) return;
-  const isMasterOn = (str[0] === '1');
   
-  document.getElementById('chk-master').checked = isMasterOn;
+  // Master State
+  isMasterActive = (str[0] === '1');
+  const btnMaster = document.getElementById('btn-master');
+  if (isMasterActive) btnMaster.classList.add('active');
+  else btnMaster.classList.remove('active');
+  
+  // Features State
   document.getElementById('chk-fsd').checked = (str[1] === '1');
   document.getElementById('chk-nag').checked = (str[2] === '1');
   document.getElementById('chk-isa').checked = (str[3] === '1');
-  document.getElementById('chk-stress').checked = (str[4] === '1');
+  
+  // Stress Test State
+  isStressTestActive = (str[4] === '1');
+  const btnStress = document.getElementById('btn-stress');
+  if (isStressTestActive) {
+    btnStress.classList.add('active');
+    document.getElementById('lbl-stress').innerText = "Stop Test";
+    // Visually disable master when stress test is active
+    btnMaster.style.opacity = '0.4';
+    btnMaster.style.cursor = 'not-allowed';
+  } else {
+    btnStress.classList.remove('active');
+    document.getElementById('lbl-stress').innerText = "Stress Test";
+    btnMaster.style.opacity = '1';
+    btnMaster.style.cursor = 'pointer';
+  }
 
-  // Dimming visuale dei controlli se il master è off
+  // Dim slave rows if master is off
   const slaveRows = document.querySelectorAll('.slave-row');
   slaveRows.forEach(row => {
-    if (isMasterOn) row.classList.remove('dimmed');
+    if (isMasterActive) row.classList.remove('dimmed');
     else row.classList.add('dimmed');
   });
 }
 
-// Invia comandi via BLE
 async function sendCommand(cmd) {
   if (!cmdChar) return;
   try {
     const enc = new TextEncoder();
     await cmdChar.writeValueWithoutResponse(enc.encode(cmd));
   } catch (err) {
-    printLog(`[ERRORE CRITICO] Impossibile inviare comando: ${err}\n`);
+    printLog(`[ERRORE CRITICO] Command error: ${err}`);
   }
 }
 
-// Listener degli Switch
-document.getElementById('chk-master').addEventListener('change', e => { vibrate(); sendCommand(e.target.checked ? '1' : '0'); });
+// Master Pill Toggle Logic
+document.getElementById('btn-master').addEventListener('click', async () => {
+  vibrate();
+  if (isStressTestActive) {
+    alert("Please disable Stress Test first to toggle CAN Injection.");
+    return;
+  }
+  await sendCommand(isMasterActive ? '0' : '1');
+});
+
+// Switch Listeners
 document.getElementById('chk-fsd').addEventListener('change', e => { vibrate(); sendCommand(e.target.checked ? 'f' : 'g'); });
 document.getElementById('chk-nag').addEventListener('change', e => { vibrate(); sendCommand(e.target.checked ? 'n' : 'm'); });
 document.getElementById('chk-isa').addEventListener('change', e => { vibrate(); sendCommand(e.target.checked ? '2' : '3'); });
 
-document.getElementById('chk-stress').addEventListener('change', e => {
+// Smart Stress Test Logic
+document.getElementById('btn-stress').addEventListener('click', async () => {
   vibrate();
-  if (e.target.checked) {
-    if (confirm("⚠️ ATTENZIONE: Questa modalità genera traffico sintetico sul bus per stress test. NON ATTIVARE con l'auto collegata. Procedere?")) {
-      sendCommand('4');
-    } else {
-      e.target.checked = false; // Rollback
+  if (!isStressTestActive) {
+    if (confirm("⚠️ WARNING: This mode generates synthetic bus traffic (Stress Test). DO NOT ACTIVATE while connected to the vehicle. Proceed?")) {
+      masterWasActiveBeforeStress = isMasterActive;
+      if (isMasterActive) await sendCommand('0');
+      setTimeout(async () => { await sendCommand('4'); }, 100); 
     }
   } else {
-    sendCommand('5');
+    await sendCommand('5');
+    if (masterWasActiveBeforeStress) {
+      setTimeout(async () => { await sendCommand('1'); }, 100);
+    }
   }
 });
 
-// Abilita/Disabilita l'interazione degli switch (quando disconnesso)
 function setControlsEnabled(enabled) {
   document.querySelectorAll('.toggle input').forEach(el => el.disabled = !enabled);
-  if(!enabled) document.querySelectorAll('.slave-row').forEach(row => row.classList.remove('dimmed')); // Resetta visivamente
+  document.getElementById('btn-master').disabled = !enabled;
+  document.getElementById('btn-stress').disabled = !enabled;
+  if(!enabled) document.querySelectorAll('.slave-row').forEach(row => row.classList.remove('dimmed'));
 }
 
 // ==========================================
-// CORE BLUETOOTH (Web BLE API)
+// BLUETOOTH CORE
 // ==========================================
 const btnBle = document.getElementById('btn-ble');
 const lblBle = document.getElementById('ble-label');
@@ -414,9 +541,9 @@ btnBle.addEventListener('click', async () => {
   }
 
   try {
-    btnBle.className = 'connecting';
-    lblBle.innerText = 'Ricerca...';
-    printLog("[SISTEMA] Ricerca dispositivi BLE in corso...\n");
+    btnBle.className = 'pill-btn connecting';
+    lblBle.innerText = 'Scanning...';
+    printLog("[SISTEMA] Scanning for BLE devices...");
 
     bleDevice = await navigator.bluetooth.requestDevice({
       filters:[{ name: 'Tesla-CAN-Node' }],
@@ -425,55 +552,48 @@ btnBle.addEventListener('click', async () => {
 
     bleDevice.addEventListener('gattserverdisconnected', onDisconnect);
 
-    printLog("[SISTEMA] Connessione al server GATT...\n");
+    printLog("[SISTEMA] Connecting...");
     const server = await bleDevice.gatt.connect();
-    
-    printLog("[SISTEMA] Richiesta Servizi...\n");
     const service = await server.getPrimaryService(SVC_UUID);
 
-    // 1. Caratteristica Comandi e Stato (Sottoscrizione per Aggiornamento UI)
     cmdChar = await service.getCharacteristic(CMD_UUID);
     await cmdChar.startNotifications();
     cmdChar.addEventListener('characteristicvaluechanged', (e) => {
-      const stateStr = new TextDecoder().decode(e.target.value);
-      parseState(stateStr);
+      parseState(new TextDecoder().decode(e.target.value));
     });
 
-    // 2. Nuova Caratteristica LOG Testuali
     const logChar = await service.getCharacteristic(LOG_UUID);
     await logChar.startNotifications();
     logChar.addEventListener('characteristicvaluechanged', (e) => {
       printLog(new TextDecoder().decode(e.target.value));
     });
 
-    // UI Update Successo
-    btnBle.className = 'connected';
-    lblBle.innerText = 'Connesso';
+    btnBle.className = 'pill-btn connected';
+    lblBle.innerText = 'Connected';
     setControlsEnabled(true);
     requestWakeLock();
+    printLog("[SISTEMA] Connection established successfully.");
     
   } catch (error) {
-    printLog(`[ERRORE CRITICO] Connessione BLE fallita: ${error}\n`);
-    btnBle.className = '';
-    lblBle.innerText = 'Connetti';
+    printLog(`[ERRORE CRITICO] Connection failed: ${error}`);
+    btnBle.className = 'pill-btn';
+    lblBle.innerText = 'Connect';
   }
 });
 
 function onDisconnect() {
-  printLog("[ERRORE CRITICO] Dispositivo disconnesso o fuori portata!\n");
-  btnBle.className = '';
-  lblBle.innerText = 'Connetti';
+  printLog("[ERRORE CRITICO] Device disconnected.");
+  btnBle.className = 'pill-btn';
+  lblBle.innerText = 'Connect';
   cmdChar = null;
   setControlsEnabled(false);
   
-  // Rilascia Wake Lock
   if (wakeLock !== null) {
-    wakeLock.release().then(() => { wakeLock = null; printLog("[SISTEMA] Wake Lock rilasciato.\n"); });
+    wakeLock.release().then(() => { wakeLock = null; printLog("[SISTEMA] Wake Lock released."); });
   }
 }
 
-// Init Start
-printLog("[SISTEMA] Interfaccia caricata. Pronta alla connessione.\n");
+printLog("[SISTEMA] Interface loaded. Ready to connect.");
 </script>
 </body>
 </html>

@@ -3,690 +3,477 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>CAN Node</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>CAN Node Dashboard</title>
 <style>
+/* CSS Reset e Variabili Dark Theme */
 :root {
-  --bg:        #131313;
-  --s1:        #1c1c1c;
-  --s2:        #242424;
-  --s3:        #2e2e2e;
-  --border:    #2a2a2a;
-  --border2:   #333;
-  --red:       #e82127;
-  --red-soft:  rgba(232,33,39,0.12);
-  --white:     #f5f5f5;
-  --gray:      #8c8c8c;
-  --gray-dim:  #555;
-  --green:     #3ee07f;
-  --green-soft:rgba(62,224,127,0.1);
-  --font:      'Outfit', sans-serif;
-  --mono:      'DM Mono', monospace;
-  --r:         12px;
-  --r-sm:      8px;
+  --bg-color: #121212;
+  --panel-color: #1e1e1e;
+  --border-color: #333333;
+  --text-main: #f5f5f5;
+  --text-dim: #999999;
+  --accent-green: #00c853;
+  --accent-red: #d50000;
+  --terminal-bg: #0a0a0a;
 }
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-html, body {
-  height: 100%;
-  overflow: hidden;
-  background: var(--bg);
-  color: var(--white);
-  font-family: var(--font);
-  font-size: 15px;
-  -webkit-font-smoothing: antialiased;
-}
-
-.app {
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  max-width: 480px;
-  margin: 0 auto;
+  overflow: hidden; /* Blocca lo scroll della pagina (Single-Page) */
 }
 
-/* ── HEADER ── */
+/* 1. HEADER (Fisso in alto) */
 header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px 12px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px; background: var(--bg-color); border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
 }
-.header-left { display: flex; flex-direction: column; gap: 2px; }
-.app-title { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
-.app-sub   { font-size: 12px; color: var(--gray); font-weight: 400; }
-
-.ble-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 16px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  font-family: var(--font);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: var(--s1);
-  color: var(--gray);
-  -webkit-appearance: none;
+.title-box h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.5px; }
+.title-box p { font-size: 12px; color: var(--text-dim); }
+#btn-ble {
+  background: var(--panel-color); color: var(--text-main);
+  border: 1px solid var(--border-color); border-radius: 24px;
+  padding: 8px 16px; font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s;
 }
-.ble-btn:active   { transform: scale(0.96); }
-.ble-btn.connected {
-  background: var(--green-soft);
-  color: var(--green);
-  border-color: rgba(62,224,127,0.25);
-}
-.ble-btn:disabled { opacity: 0.4; }
+#btn-ble .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); }
+#btn-ble.connecting .dot { background: #ffb300; animation: pulse 1s infinite alternate; }
+#btn-ble.connected { background: rgba(0,200,83,0.1); border-color: var(--accent-green); color: var(--accent-green); }
+#btn-ble.connected .dot { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
+@keyframes pulse { from { opacity: 0.4; } to { opacity: 1; } }
 
-.ble-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--gray-dim);
-  flex-shrink: 0;
-  transition: background 0.3s, box-shadow 0.3s;
+/* 2. DASHBOARD TELEMETRIA & GRAFICO */
+#telemetry { flex-shrink: 0; padding: 16px 20px; border-bottom: 1px solid var(--border-color); background: var(--panel-color); }
+.chart-container { width: 100%; height: 70px; margin-bottom: 12px; position: relative; }
+canvas { width: 100%; height: 100%; display: block; }
+.badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.badge {
+  background: var(--bg-color); border: 1px solid var(--border-color);
+  border-radius: 12px; padding: 4px 10px; font-size: 11px; font-weight: 600; color: var(--text-dim);
 }
-.ble-dot.connected  { background: var(--green); box-shadow: 0 0 6px var(--green); }
-.ble-dot.connecting { background: #f0a500; animation: blink 0.8s infinite; }
-.ble-dot.error      { background: var(--red); }
+.badge.active { border-color: var(--accent-green); color: var(--text-main); }
 
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-
-/* ── TABS ── */
-.tabs {
-  display: flex;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  background: var(--bg);
+/* 3. CONTROLLI MODIFICA BUS */
+#controls { flex-shrink: 0; padding: 16px 20px; overflow-y: auto; }
+.controls-list { display: flex; flex-direction: column; gap: 12px; }
+.control-row {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--panel-color); padding: 12px 16px; border-radius: 12px;
+  border: 1px solid var(--border-color); transition: opacity 0.3s;
 }
-.tab {
-  flex: 1;
-  padding: 11px 0 10px;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--gray);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: color 0.2s, border-color 0.2s;
-  user-select: none;
-}
-.tab.active { color: var(--white); border-bottom-color: var(--red); }
+.control-row.dimmed { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+.control-info h3 { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+.control-info p { font-size: 11px; color: var(--text-dim); }
 
-/* ── PANELS ── */
-.panel { display: none; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.panel.active { display: flex; flex-direction: column; }
-
-/* ── CONTROLS ── */
-.controls-panel { padding: 0 0 24px; }
-
-.status-strip {
-  display: none;
-  gap: 8px;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
+/* Toggle Switch iOS Style */
+.toggle { position: relative; display: inline-block; width: 48px; height: 28px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #444; transition: .3s; border-radius: 28px;
 }
-.status-strip.visible { display: flex; }
+.slider:before {
+  position: absolute; content: ""; height: 22px; width: 22px; left: 3px; bottom: 3px;
+  background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.toggle input:checked + .slider { background-color: var(--text-main); }
+.toggle input:checked + .slider:before { transform: translateX(20px); background-color: #121212; }
+/* Danger Switch (Rosso) */
+.toggle.danger input:checked + .slider { background-color: var(--accent-red); }
+.toggle.danger input:checked + .slider:before { background-color: #fff; }
 
-.status-chip {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  border-radius: 20px;
-  background: var(--s1);
-  border: 1px solid var(--border);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--gray);
-  transition: all 0.25s;
+/* 4. TERMINALE LOG */
+#terminal {
+  flex-grow: 1; display: flex; flex-direction: column;
+  background: var(--terminal-bg); border-top: 1px solid var(--border-color); overflow: hidden;
 }
-.status-chip .dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--gray-dim);
-  transition: background 0.25s, box-shadow 0.25s;
+.terminal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 20px; background: #181818; border-bottom: 1px solid #222; font-size: 11px; color: var(--text-dim); flex-shrink: 0;
 }
-.status-chip.on { color: var(--white); border-color: var(--border2); }
-.status-chip.on .dot { background: var(--green); box-shadow: 0 0 5px var(--green); }
-
-.section { padding: 18px 20px 0; }
-.section-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  color: var(--gray-dim);
-  margin-bottom: 10px;
+.terminal-header span { font-family: monospace; }
+.terminal-header button {
+  background: none; border: none; color: var(--accent-red); font-size: 11px; font-weight: bold; cursor: pointer; padding: 4px;
 }
-
-/* ── ROWS ── */
-.card-list {
-  background: var(--s1);
-  border-radius: var(--r);
-  border: 1px solid var(--border);
-  overflow: hidden;
-  transition: opacity 0.25s;
-}
-.card-list.dimmed { opacity: 0.35; pointer-events: none; }
-
-.row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 15px 18px;
-  border-bottom: 1px solid var(--border);
-  transition: background 0.15s;
-}
-.row:last-child { border-bottom: none; }
-.row:active { background: var(--s2); }
-
-.row-icon { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
-.row-text { flex: 1; min-width: 0; }
-.row-name {
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.row-desc { font-size: 11px; color: var(--gray); line-height: 1.4; }
-
-/* ── TOGGLE ── */
-.toggle { position: relative; width: 48px; height: 28px; flex-shrink: 0; }
-.toggle input { display: none; }
-.toggle-track {
-  position: absolute; inset: 0; border-radius: 14px;
-  background: var(--s3); cursor: pointer; transition: background 0.25s;
-}
-.toggle-thumb {
-  position: absolute; top: 3px; left: 3px;
-  width: 22px; height: 22px; border-radius: 50%;
-  background: #888;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-  transition: transform 0.25s cubic-bezier(.4,0,.2,1), background 0.25s;
-  pointer-events: none;
-}
-.toggle input:checked ~ .toggle-track  { background: var(--red); }
-.toggle input:checked ~ .toggle-thumb  { transform: translateX(20px); background: #fff; }
-.toggle.green  input:checked ~ .toggle-track { background: var(--green); }
-.toggle.danger input:checked ~ .toggle-track { background: #c0392b; }
-
-/* ── PASSTHROUGH NOTICE ── */
-.notice {
-  display: none;
-  margin: 10px 20px 0;
-  padding: 10px 14px;
-  border-radius: var(--r-sm);
-  background: var(--s1);
-  border: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--gray);
-}
-.notice.visible { display: block; }
-
-/* ── CONNECT PROMPT ── */
-.connect-prompt {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 60px 20px;
-  color: var(--gray-dim);
-}
-.connect-prompt .icon { font-size: 38px; margin-bottom: 6px; }
-.connect-prompt p { font-size: 13px; text-align: center; line-height: 1.5; }
-
-/* ── NO BLE ── */
-.no-ble {
-  display: none;
-  margin: 14px 20px 0;
-  padding: 11px 14px;
-  background: var(--red-soft);
-  border-radius: var(--r-sm);
-  border: 1px solid rgba(232,33,39,0.3);
-  font-size: 12.5px;
-  line-height: 1.5;
-}
-
-/* ── LOG PANEL ── */
-.log-panel { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-
-.log-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 20px;
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  background: var(--bg);
-  z-index: 5;
-}
-.log-count  { font-size: 11px; color: var(--gray); }
-.log-clear  {
-  font-family: var(--font);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--red);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px 0;
-}
-
-.log-entries { padding: 4px 0 40px; }
-
-.log-entry {
-  padding: 6px 20px;
-  border-bottom: 1px solid rgba(42,42,42,0.5);
-  animation: logIn 0.15s ease;
-}
-@keyframes logIn { from{opacity:0} to{opacity:1} }
-
-.log-ts {
-  font-family: var(--mono);
-  font-size: 9.5px;
-  color: var(--gray-dim);
-  display: block;
-  margin-bottom: 2px;
-}
-.log-text {
-  font-family: var(--mono);
-  font-size: 11px;
-  line-height: 1.55;
+.log-container {
+  flex-grow: 1; overflow-y: auto; padding: 12px 20px;
+  font-family: "JetBrains Mono", "Fira Code", monospace; font-size: 12px; line-height: 1.5; color: #ccc;
   word-break: break-all;
-  color: #aaa;
 }
-.log-text .tag     { font-weight: 500; }
-.t-sistem          { color: #7eb3d4; }
-.t-telem           { color: #c9a96e; }
-.t-ble             { color: #9dc4e8; }
-.t-err             { color: var(--red); }
-.val               { color: var(--white); }
-.val-on            { color: var(--green); font-weight: 500; }
-.val-off           { color: var(--gray); }
-.val-warn          { color: #f0a500; }
-
-::-webkit-scrollbar { width: 0; }
+.log-line { margin-bottom: 4px; }
+.t-sys { color: #4fc3f7; font-weight: bold; }
+.t-ble { color: #ce93d8; font-weight: bold; }
+.t-tel { color: #81c784; }
+.t-err { color: #ef5350; font-weight: bold; }
 </style>
 </head>
 <body>
-<div class="app">
 
+  <!-- HEADER -->
   <header>
-    <div class="header-left">
-      <div class="app-title">CAN Node</div>
-      <div class="app-sub">Tesla HW4 · ESP32</div>
+    <div class="title-box">
+      <h1>CAN Node</h1>
+      <p>Tesla HW4 Mod</p>
     </div>
-    <button class="ble-btn" id="ble-btn" onclick="handleBleToggle()">
-      <span class="ble-dot" id="ble-dot"></span>
+    <button id="btn-ble">
+      <div class="dot"></div>
       <span id="ble-label">Connetti</span>
     </button>
   </header>
 
-  <div class="no-ble" id="no-ble">
-    Web Bluetooth non supportato. Usa Chrome o Edge su Android o Desktop.
-  </div>
-
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('controls',this)">Controlli</div>
-    <div class="tab" onclick="switchTab('log',this)">
-      Seriale<span id="log-badge" style="display:none;color:var(--red);"> ●</span>
+  <!-- DASHBOARD -->
+  <section id="telemetry">
+    <div class="chart-container">
+      <canvas id="traffic-chart"></canvas>
     </div>
-  </div>
-
-  <!-- ── CONTROLS ── -->
-  <div class="panel active controls-panel" id="panel-controls">
-
-    <div class="status-strip" id="status-strip">
-      <div class="status-chip" id="chip-fsd-ui"><span class="dot"></span>Semafori UI</div>
-      <div class="status-chip on" id="chip-speed"><span class="dot"></span><span id="chip-speed-val">—</span></div>
+    <div class="badges">
+      <div class="badge" id="badge-ui">Semafori UI: --</div>
+      <div class="badge" id="badge-prof">Profilo: --</div>
+      <div class="badge" id="badge-src">Fonte: --</div>
     </div>
+  </section>
 
-    <!-- Master -->
-    <div class="section">
-      <div class="section-label">Master</div>
-      <div class="card-list">
-        <div class="row">
-          <div class="row-icon">⚡</div>
-          <div class="row-text">
-            <div class="row-name">Modulo Attivo</div>
-            <div class="row-desc">OFF = pass-through trasparente</div>
-          </div>
-          <label class="toggle" onclick="event.stopPropagation()">
-            <input type="checkbox" id="chk-master" onchange="sendCmd(this.checked?'1':'0')">
-            <div class="toggle-track"></div>
-            <div class="toggle-thumb"></div>
-          </label>
+  <!-- CONTROLS -->
+  <section id="controls">
+    <div class="controls-list">
+      <!-- Master -->
+      <div class="control-row" id="row-master" style="border-color: #555;">
+        <div class="control-info">
+          <h3>Master Switch</h3>
+          <p>Disattiva per pass-through trasparente</p>
         </div>
+        <label class="toggle">
+          <input type="checkbox" id="chk-master" disabled>
+          <span class="slider"></span>
+        </label>
       </div>
-      <div class="notice" id="notice-passthrough">⏸ Pass-through attivo — nessuna modifica al bus</div>
-    </div>
-
-    <!-- Features -->
-    <div class="section" style="padding-top:16px;">
-      <div class="section-label">Funzionalità</div>
-      <div class="card-list dimmed" id="feature-list">
-
-        <div class="row">
-          <div class="row-icon">🚦</div>
-          <div class="row-text">
-            <div class="row-name">FSD Injection</div>
-            <div class="row-desc">Bit 46, 59, 60 — richiede Semafori su UI</div>
-          </div>
-          <label class="toggle" onclick="event.stopPropagation()">
-            <input type="checkbox" id="chk-fsd" onchange="sendCmd(this.checked?'f':'g')">
-            <div class="toggle-track"></div>
-            <div class="toggle-thumb"></div>
-          </label>
+      <!-- Features -->
+      <div class="control-row slave-row">
+        <div class="control-info">
+          <h3>FSD Injection</h3>
+          <p>Forza flag FSD (Bit 46, 59, 60)</p>
         </div>
-
-        <div class="row">
-          <div class="row-icon">🙌</div>
-          <div class="row-text">
-            <div class="row-name">Nag Suppression</div>
-            <div class="row-desc">Silenzia "mani sul volante"</div>
-          </div>
-          <label class="toggle" onclick="event.stopPropagation()">
-            <input type="checkbox" id="chk-nag" onchange="sendCmd(this.checked?'n':'m')">
-            <div class="toggle-track"></div>
-            <div class="toggle-thumb"></div>
-          </label>
+        <label class="toggle">
+          <input type="checkbox" id="chk-fsd" disabled>
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="control-row slave-row">
+        <div class="control-info">
+          <h3>Nag Suppression</h3>
+          <p>Silenzia allarme volante (Bit 19, 47)</p>
         </div>
-
-        <div class="row">
-          <div class="row-icon">🔇</div>
-          <div class="row-text">
-            <div class="row-name">ISA Chimes</div>
-            <div class="row-desc">Muta avvisi limite velocità (ID 921)</div>
-          </div>
-          <label class="toggle" onclick="event.stopPropagation()">
-            <input type="checkbox" id="chk-isa" onchange="sendCmd(this.checked?'2':'3')">
-            <div class="toggle-track"></div>
-            <div class="toggle-thumb"></div>
-          </label>
+        <label class="toggle">
+          <input type="checkbox" id="chk-nag" disabled>
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="control-row slave-row">
+        <div class="control-info">
+          <h3>ISA Chimes Mute</h3>
+          <p>Muta allarmi limite velocità (ID 921)</p>
         </div>
-
-        <div class="row">
-          <div class="row-icon">⚗️</div>
-          <div class="row-text">
-            <div class="row-name">Stress Test</div>
-            <div class="row-desc" style="color:rgba(232,33,39,0.75);">Solo a banco — non con auto collegata</div>
-          </div>
-          <label class="toggle danger" onclick="event.stopPropagation()">
-            <input type="checkbox" id="chk-stress" onchange="handleStress(this)">
-            <div class="toggle-track"></div>
-            <div class="toggle-thumb"></div>
-          </label>
+        <label class="toggle">
+          <input type="checkbox" id="chk-isa" disabled>
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="control-row slave-row">
+        <div class="control-info">
+          <h3 style="color: var(--accent-red);">Stress Test</h3>
+          <p>Genera traffico finto (Uso a banco)</p>
         </div>
-
+        <label class="toggle danger">
+          <input type="checkbox" id="chk-stress" disabled>
+          <span class="slider"></span>
+        </label>
       </div>
     </div>
+  </section>
 
-    <div class="connect-prompt" id="connect-prompt">
-      <div class="icon">📡</div>
-      <p>Connetti il dispositivo BLE<br>per iniziare</p>
+  <!-- TERMINALE -->
+  <section id="terminal">
+    <div class="terminal-header">
+      <span>>_ /dev/ttyUSB0</span>
+      <button onclick="clearTerminal()">CLEAR</button>
     </div>
-
-  </div>
-
-  <!-- ── LOG PANEL ── -->
-  <div class="panel log-panel" id="panel-log">
-    <div class="log-toolbar">
-      <span class="log-count" id="log-count">0 righe</span>
-      <button class="log-clear" onclick="clearLogs()">Cancella</button>
-    </div>
-    <div class="log-entries" id="log-entries"></div>
-  </div>
-
-</div>
+    <div class="log-container" id="log-container"></div>
+  </section>
 
 <script>
-const SVC  = 'abcd0001-1234-5678-90ab-cdef12345678';
-const CHAR = 'abcd0002-1234-5678-90ab-cdef12345678';
-const SPEED_MAP = {0:'Max',1:'Normal',2:'Hurry',3:'Chill',4:'Sloth'};
+// ==========================================
+// CONFIGURAZIONE BLE E VARIABILI
+// ==========================================
+const SVC_UUID = 'abcd0001-1234-5678-90ab-cdef12345678';
+const CMD_UUID = 'abcd0002-1234-5678-90ab-cdef12345678';
+const LOG_UUID = 'abcd0003-1234-5678-90ab-cdef12345678';
 
-let ble = { device:null, char:null, connected:false };
-let devState = null;
-let logCount = 0;
-let activeTab = 'controls';
+let bleDevice = null;
+let cmdChar = null;
+let wakeLock = null;
 
-/* ── TABS ── */
-function switchTab(tab, el) {
-  activeTab = tab;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + tab).classList.add('active');
-  if (tab === 'log') {
-    document.getElementById('log-badge').style.display = 'none';
-    requestAnimationFrame(() => {
-      const lp = document.getElementById('panel-log');
-      lp.scrollTop = lp.scrollHeight;
-    });
+const profiles = {0:'Max', 1:'Normal', 2:'Hurry', 3:'Chill', 4:'Sloth'};
+
+// ==========================================
+// FUNZIONI UI / HAPTIC
+// ==========================================
+function vibrate() {
+  if (navigator.vibrate) navigator.vibrate(50);
+}
+
+// Request Screen Wake Lock
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      printLog("[SISTEMA] Wake Lock attivato (Schermo sempre acceso).\n");
+    }
+  } catch (err) {
+    printLog(`[ERRORE CRITICO] Wake Lock fallito: ${err.name}\n`);
   }
 }
 
-/* ── TIMESTAMP ── */
-function ts() {
-  const d  = new Date();
-  const hh = String(d.getHours()).padStart(2,'0');
-  const mm = String(d.getMinutes()).padStart(2,'0');
-  const ss = String(d.getSeconds()).padStart(2,'0');
-  const ms = String(d.getMilliseconds()).padStart(3,'0');
-  return `${hh}:${mm}:${ss}.${ms}`;
-}
+// ==========================================
+// GESTIONE TERMINALE LOG & PARSING
+// ==========================================
+const logContainer = document.getElementById('log-container');
 
-/* ── LOG ── */
-function appendLog(html) {
-  logCount++;
-  const el = document.createElement('div');
-  el.className = 'log-entry';
-  el.innerHTML = `<span class="log-ts">${ts()}</span><div class="log-text">${html}</div>`;
-  document.getElementById('log-entries').appendChild(el);
-  const entries = document.getElementById('log-entries');
-  while (entries.children.length > 500) entries.removeChild(entries.firstChild);
-  document.getElementById('log-count').textContent = logCount + ' righe';
-  if (activeTab === 'log') {
-    const lp = document.getElementById('panel-log');
-    lp.scrollTop = lp.scrollHeight;
-  } else {
-    document.getElementById('log-badge').style.display = 'inline';
+function clearTerminal() { logContainer.innerHTML = ''; vibrate(); }
+
+function printLog(text) {
+  // Syntax Highlighting basato sui Tag
+  let formatted = text
+    .replace(/\[SISTEMA\]/g, '<span class="t-sys">[SISTEMA]</span>')
+    .replace(/\[BLE\]/g, '<span class="t-ble">[BLE]</span>')
+    .replace(/\[TELEMETRIA\]/g, '<span class="t-tel">[TELEMETRIA]</span>')
+    .replace(/\[ERRORE CRITICO\]/g, '<span class="t-err">[ERRORE CRITICO]</span>');
+  
+  const div = document.createElement('div');
+  div.className = 'log-line';
+  div.innerHTML = formatted;
+  logContainer.appendChild(div);
+  
+  // Limita a 200 righe per non saturare la RAM
+  if (logContainer.childNodes.length > 200) {
+    logContainer.removeChild(logContainer.firstChild);
+  }
+  // Auto-scroll a fine pagina
+  logContainer.scrollTop = logContainer.scrollHeight;
+
+  // Estrazione dati per Dashboard (se è un log di telemetria)
+  if (text.includes('[TELEMETRIA]')) {
+    const traf = text.match(/Traffico elaborato: (\d+) msg\/s/);
+    if (traf) addGraphData(parseInt(traf[1], 10));
+
+    const ui = text.match(/FSD su Schermo: (ACCESO|SPENTO)/);
+    if (ui) document.getElementById('badge-ui').innerText = 'Semafori UI: ' + ui[1];
+
+    const prof = text.match(/Prof\. Vel: (\d+)/);
+    if (prof) document.getElementById('badge-prof').innerText = 'Profilo: ' + (profiles[prof[1]] || prof[1]);
+
+    const src = text.match(/Fonte: (VEICOLO REALE|SIMULATORE SINTETICO)/);
+    if (src) document.getElementById('badge-src').innerText = 'Fonte: ' + (src[1] === 'VEICOLO REALE' ? 'REALE' : 'SINTETICO');
   }
 }
-function clearLogs() {
-  document.getElementById('log-entries').innerHTML = '';
-  logCount = 0;
-  document.getElementById('log-count').textContent = '0 righe';
+
+// ==========================================
+// GRAFICO CANVAS (Super Leggero, No Librerie)
+// ==========================================
+const canvas = document.getElementById('traffic-chart');
+const ctx = canvas.getContext('2d');
+const maxPoints = 30; // Finestra scorrevole ultimi 30 pacchetti
+let chartData = Array(maxPoints).fill(0);
+
+// Auto-ridimensionamento Canvas
+function resizeCanvas() {
+  canvas.width = canvas.parentElement.clientWidth;
+  canvas.height = canvas.parentElement.clientHeight;
+  drawChart();
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function addGraphData(val) {
+  chartData.push(val);
+  if (chartData.length > maxPoints) chartData.shift();
+  drawChart();
 }
 
-/* ── LOG FORMATTERS — mirror ESP32 serial output ── */
-function tag(name, cls) { return `<span class="tag ${cls}">[${name}]</span>`; }
-function vOn(s)         { return `<span class="val-on">${s}</span>`; }
-function vOff(s)        { return `<span class="val-off">${s}</span>`; }
-function vWarn(s)       { return `<span class="val-warn">${s}</span>`; }
-function vVal(s)        { return `<span class="val">${s}</span>`; }
+function drawChart() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (chartData.length < 2) return;
 
-function logSistema(msg) { appendLog(`${tag('SISTEMA','t-sistem')} ${msg}`); }
-function logBleMsg(msg)  { appendLog(`${tag('BLE','t-ble')} ${msg}`); }
+  const maxVal = Math.max(...chartData, 100); // Base asse Y (minimo 100)
+  const stepX = canvas.width / (maxPoints - 1);
+  
+  ctx.beginPath();
+  ctx.moveTo(0, canvas.height);
 
-// Mirrors: [TELEMETRIA] Fonte: X | Traffico: X msg/s | Stato Sistema: X | FSD su Schermo: X | FSD Mod: X | Nag Mod: X | Prof. Vel: X | Avvisi Acustici: X
-function logTelemetria(s) {
-  const fonte  = s.stress ? vWarn('SIMULATORE SINTETICO') : vVal('VEICOLO REALE');
-  const mod    = s.master ? vOn('ATTIVO') : vOff('DISATTIVATO');
-  const fsdUi  = s.fsdUI  ? vOn('ACCESO') : vOff('SPENTO');
-  const fsdMod = s.fsd    ? vOn('ATTIVO') : vOff('INATTIVO');
-  const nagMod = s.nag    ? vOn('ATTIVO') : vOff('INATTIVO');
-  const avvisi = s.isa    ? vWarn('SILENZIATI') : vOn('NORMALI');
-  const prof   = vVal(SPEED_MAP[s.speed] ?? s.speed);
-  appendLog(
-    `${tag('TELEMETRIA','t-telem')} ` +
-    `Fonte: ${fonte} | Stato Sistema: ${mod} | FSD su Schermo: ${fsdUi} | ` +
-    `FSD Mod: ${fsdMod} | Nag Mod: ${nagMod} | Prof. Vel: ${prof} | Avvisi Acustici: ${avvisi}`
-  );
+  for (let i = 0; i < chartData.length; i++) {
+    const x = i * stepX;
+    const y = canvas.height - ((chartData[i] / maxVal) * canvas.height * 0.9); // 10% di padding top
+    ctx.lineTo(x, y);
+  }
+  
+  ctx.lineTo(canvas.width, canvas.height);
+  ctx.closePath();
+
+  // Gradiente Sotto Linea
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, 'rgba(0, 200, 83, 0.4)');
+  gradient.addColorStop(1, 'rgba(0, 200, 83, 0.0)');
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  // Linea principale verde
+  ctx.beginPath();
+  for (let i = 0; i < chartData.length; i++) {
+    const x = i * stepX;
+    const y = canvas.height - ((chartData[i] / maxVal) * canvas.height * 0.9);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#00c853';
+  ctx.lineWidth = 2;
+  ctx.stroke();
 }
 
-/* ── PARSE STATE STRING "MFNIS" ── */
+// ==========================================
+// GESTIONE STATO E SWITCH CONTROLLI
+// ==========================================
 function parseState(str) {
-  if (!str || str.length < 5) return null;
-  return {
-    master: str[0]==='1',
-    fsd:    str[1]==='1',
-    nag:    str[2]==='1',
-    isa:    str[3]==='1',
-    stress: str[4]==='1',
-    fsdUI:  devState?.fsdUI ?? false,
-    speed:  devState?.speed ?? 1,
-  };
+  if (str.length < 5) return;
+  const isMasterOn = (str[0] === '1');
+  
+  document.getElementById('chk-master').checked = isMasterOn;
+  document.getElementById('chk-fsd').checked = (str[1] === '1');
+  document.getElementById('chk-nag').checked = (str[2] === '1');
+  document.getElementById('chk-isa').checked = (str[3] === '1');
+  document.getElementById('chk-stress').checked = (str[4] === '1');
+
+  // Dimming visuale dei controlli se il master è off
+  const slaveRows = document.querySelectorAll('.slave-row');
+  slaveRows.forEach(row => {
+    if (isMasterOn) row.classList.remove('dimmed');
+    else row.classList.add('dimmed');
+  });
 }
 
-/* ── RENDER UI ── */
-function renderUI(state) {
-  devState = state;
-  const on = state.master;
-
-  document.getElementById('chk-master').checked = on;
-  document.getElementById('notice-passthrough').classList.toggle('visible', !on);
-  document.getElementById('feature-list').classList.toggle('dimmed', !on);
-
-  document.getElementById('chk-fsd').checked    = state.fsd;
-  document.getElementById('chk-nag').checked    = state.nag;
-  document.getElementById('chk-isa').checked    = state.isa;
-  document.getElementById('chk-stress').checked = state.stress;
-
-  // Status chips
-  const strip = document.getElementById('status-strip');
-  strip.classList.toggle('visible', ble.connected);
-  document.getElementById('chip-fsd-ui').classList.toggle('on', state.fsdUI);
-  document.getElementById('chip-speed-val').textContent = SPEED_MAP[state.speed] ?? '—';
-
-  // Connect prompt
-  document.getElementById('connect-prompt').style.display = ble.connected ? 'none' : 'flex';
-}
-
-/* ── BLE SEND ── */
-async function sendCmd(cmd) {
-  if (!ble.connected || !ble.char) return;
-  try { await ble.char.writeValueWithoutResponse(new TextEncoder().encode(cmd)); }
-  catch(e) { logBleMsg(`<span class="t-err">Errore invio '${cmd}': ${e.message}</span>`); }
-}
-
-function handleStress(chk) {
-  if (chk.checked) {
-    const ok = confirm('⚠️ Stress Test\n\nGenerazione traffico CAN sintetico.\nNon usare con il veicolo collegato.\n\nConfermare?');
-    if (!ok) { chk.checked = false; return; }
+// Invia comandi via BLE
+async function sendCommand(cmd) {
+  if (!cmdChar) return;
+  try {
+    const enc = new TextEncoder();
+    await cmdChar.writeValueWithoutResponse(enc.encode(cmd));
+  } catch (err) {
+    printLog(`[ERRORE CRITICO] Impossibile inviare comando: ${err}\n`);
   }
-  sendCmd(chk.checked ? '4' : '5');
 }
 
-/* ── BLE EVENTS ── */
-function onNotify(event) {
-  const str = new TextDecoder().decode(event.target.value);
-  logBleMsg(`Stato notificato: ${vVal(str)} — M:${str[0]} F:${str[1]} N:${str[2]} I:${str[3]} S:${str[4]}`);
-  const state = parseState(str);
-  if (state) { renderUI(state); logTelemetria(state); }
+// Listener degli Switch
+document.getElementById('chk-master').addEventListener('change', e => { vibrate(); sendCommand(e.target.checked ? '1' : '0'); });
+document.getElementById('chk-fsd').addEventListener('change', e => { vibrate(); sendCommand(e.target.checked ? 'f' : 'g'); });
+document.getElementById('chk-nag').addEventListener('change', e => { vibrate(); sendCommand(e.target.checked ? 'n' : 'm'); });
+document.getElementById('chk-isa').addEventListener('change', e => { vibrate(); sendCommand(e.target.checked ? '2' : '3'); });
+
+document.getElementById('chk-stress').addEventListener('change', e => {
+  vibrate();
+  if (e.target.checked) {
+    if (confirm("⚠️ ATTENZIONE: Questa modalità genera traffico sintetico sul bus per stress test. NON ATTIVARE con l'auto collegata. Procedere?")) {
+      sendCommand('4');
+    } else {
+      e.target.checked = false; // Rollback
+    }
+  } else {
+    sendCommand('5');
+  }
+});
+
+// Abilita/Disabilita l'interazione degli switch (quando disconnesso)
+function setControlsEnabled(enabled) {
+  document.querySelectorAll('.toggle input').forEach(el => el.disabled = !enabled);
+  if(!enabled) document.querySelectorAll('.slave-row').forEach(row => row.classList.remove('dimmed')); // Resetta visivamente
 }
 
-function onDisconnected() {
-  ble.connected = false;
-  ble.char = null;
-  setBleUI('disconnected');
-  logBleMsg('Client disconnesso.');
-  renderUI(devState ?? {master:false,fsd:false,nag:false,isa:false,stress:false,fsdUI:false,speed:1});
-}
+// ==========================================
+// CORE BLUETOOTH (Web BLE API)
+// ==========================================
+const btnBle = document.getElementById('btn-ble');
+const lblBle = document.getElementById('ble-label');
 
-/* ── BLE CONNECT ── */
-async function handleBleToggle() {
-  if (ble.connected && ble.device) { ble.device.gatt.disconnect(); return; }
-  if (!navigator.bluetooth) {
-    document.getElementById('no-ble').style.display = 'block';
-    logSistema('<span class="t-err">Web Bluetooth non disponibile.</span>');
+btnBle.addEventListener('click', async () => {
+  vibrate();
+  if (bleDevice && bleDevice.gatt.connected) {
+    bleDevice.gatt.disconnect();
     return;
   }
 
-  setBleUI('connecting');
-  logSistema('Scansione dispositivi BLE...');
-
   try {
-    ble.device = await navigator.bluetooth.requestDevice({
-      filters: [{name:'Tesla-CAN-Node'}],
-      optionalServices: [SVC]
+    btnBle.className = 'connecting';
+    lblBle.innerText = 'Ricerca...';
+    printLog("[SISTEMA] Ricerca dispositivi BLE in corso...\n");
+
+    bleDevice = await navigator.bluetooth.requestDevice({
+      filters:[{ name: 'Tesla-CAN-Node' }],
+      optionalServices: [SVC_UUID]
     });
-    ble.device.addEventListener('gattserverdisconnected', onDisconnected);
-    logBleMsg(`Dispositivo trovato: ${vVal(ble.device.name)}`);
 
-    const server  = await ble.device.gatt.connect();
-    logSistema('GATT server connesso.');
-    const service = await server.getPrimaryService(SVC);
-    ble.char      = await service.getCharacteristic(CHAR);
-    logSistema('Caratteristica acquisita.');
+    bleDevice.addEventListener('gattserverdisconnected', onDisconnect);
 
-    await ble.char.startNotifications();
-    ble.char.addEventListener('characteristicvaluechanged', onNotify);
-    logSistema('Notifiche BLE attivate.');
+    printLog("[SISTEMA] Connessione al server GATT...\n");
+    const server = await bleDevice.gatt.connect();
+    
+    printLog("[SISTEMA] Richiesta Servizi...\n");
+    const service = await server.getPrimaryService(SVC_UUID);
 
-    // Sync: read current state immediately on connect
-    logSistema('Sincronizzazione stato iniziale...');
-    try {
-      const raw   = await ble.char.readValue();
-      const str   = new TextDecoder().decode(raw);
-      logBleMsg(`Stato letto: ${vVal(str)}`);
-      const state = parseState(str);
-      if (state) {
-        renderUI(state);
-        logTelemetria(state);
-        logSistema(`Interfaccia ${vOn('sincronizzata')}.`);
-      }
-    } catch(e) {
-      logSistema(`Lettura iniziale non disponibile: ${vWarn('attendo notifica...')}`);
-    }
+    // 1. Caratteristica Comandi e Stato (Sottoscrizione per Aggiornamento UI)
+    cmdChar = await service.getCharacteristic(CMD_UUID);
+    await cmdChar.startNotifications();
+    cmdChar.addEventListener('characteristicvaluechanged', (e) => {
+      const stateStr = new TextDecoder().decode(e.target.value);
+      parseState(stateStr);
+    });
 
-    ble.connected = true;
-    setBleUI('connected');
-    logSistema(`Connessione Bluetooth a Basso Consumo (BLE) ${vOn('stabilita')}.`);
-    logSistema(`Schedulatore RTOS attivo. Operativita' ${vOn('iniziata')}.`);
+    // 2. Nuova Caratteristica LOG Testuali
+    const logChar = await service.getCharacteristic(LOG_UUID);
+    await logChar.startNotifications();
+    logChar.addEventListener('characteristicvaluechanged', (e) => {
+      printLog(new TextDecoder().decode(e.target.value));
+    });
 
-  } catch(e) {
-    setBleUI('error');
-    logSistema(`<span class="t-err">Connessione fallita: ${e.message}</span>`);
-    setTimeout(() => { if (!ble.connected) setBleUI('disconnected'); }, 2500);
+    // UI Update Successo
+    btnBle.className = 'connected';
+    lblBle.innerText = 'Connesso';
+    setControlsEnabled(true);
+    requestWakeLock();
+    
+  } catch (error) {
+    printLog(`[ERRORE CRITICO] Connessione BLE fallita: ${error}\n`);
+    btnBle.className = '';
+    lblBle.innerText = 'Connetti';
   }
-}
-
-/* ── BLE UI STATE ── */
-function setBleUI(state) {
-  const dot = document.getElementById('ble-dot');
-  const btn = document.getElementById('ble-btn');
-  const lbl = document.getElementById('ble-label');
-  btn.disabled  = (state === 'connecting');
-  dot.className = 'ble-dot ' + state;
-  const labels  = { connected:'Connesso', connecting:'Connessione…', disconnected:'Connetti', error:'Errore' };
-  lbl.textContent  = labels[state] ?? 'Connetti';
-  btn.className    = 'ble-btn' + (state==='connected'?' connected':'');
-}
-
-/* ── INIT ── */
-window.addEventListener('load', () => {
-  if (!navigator.bluetooth) {
-    document.getElementById('no-ble').style.display = 'block';
-    logSistema('<span class="t-err">Web Bluetooth non supportato in questo browser.</span>');
-  } else {
-    logSistema('Sistema pronto. Web Bluetooth disponibile.');
-    logSistema(`Avvio nodo CAN in corso...`);
-  }
-  renderUI({master:false,fsd:false,nag:false,isa:false,stress:false,fsdUI:false,speed:1});
 });
+
+function onDisconnect() {
+  printLog("[ERRORE CRITICO] Dispositivo disconnesso o fuori portata!\n");
+  btnBle.className = '';
+  lblBle.innerText = 'Connetti';
+  cmdChar = null;
+  setControlsEnabled(false);
+  
+  // Rilascia Wake Lock
+  if (wakeLock !== null) {
+    wakeLock.release().then(() => { wakeLock = null; printLog("[SISTEMA] Wake Lock rilasciato.\n"); });
+  }
+}
+
+// Init Start
+printLog("[SISTEMA] Interfaccia caricata. Pronta alla connessione.\n");
 </script>
 </body>
 </html>

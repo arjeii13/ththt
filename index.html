@@ -482,7 +482,7 @@ async function sendCommand(cmd) {
   if (!cmdChar) return;
   try {
     const enc = new TextEncoder();
-    await cmdChar.writeValueWithoutResponse(enc.encode(cmd));
+    await cmdChar.writeValue(enc.encode(cmd));
   } catch (err) {
     printLog(`[ERRORE CRITICO] Command error: ${err}`);
   }

@@ -2,1157 +2,690 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tesla CAN Node — BLE Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>CAN Node</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:        #080b0f;
-    --surface:   #0f141a;
-    --surface2:  #141c25;
-    --border:    #1e2d3d;
-    --accent:    #e82127;
-    --accent-dim:#7a0f12;
-    --amber:     #f0a500;
-    --green:     #00e5a0;
-    --green-dim: #004d36;
-    --text:      #c8d8e8;
-    --text-dim:  #4a6070;
-    --text-muted:#2a3a48;
-    --mono:      'Share Tech Mono', monospace;
-    --display:   'Orbitron', monospace;
-    --ui:        'Space Mono', monospace;
-    --glow-red:  0 0 12px rgba(232,33,39,0.4), 0 0 30px rgba(232,33,39,0.15);
-    --glow-green:0 0 12px rgba(0,229,160,0.4), 0 0 30px rgba(0,229,160,0.15);
-    --glow-amber:0 0 12px rgba(240,165,0,0.4);
-  }
+:root {
+  --bg:        #131313;
+  --s1:        #1c1c1c;
+  --s2:        #242424;
+  --s3:        #2e2e2e;
+  --border:    #2a2a2a;
+  --border2:   #333;
+  --red:       #e82127;
+  --red-soft:  rgba(232,33,39,0.12);
+  --white:     #f5f5f5;
+  --gray:      #8c8c8c;
+  --gray-dim:  #555;
+  --green:     #3ee07f;
+  --green-soft:rgba(62,224,127,0.1);
+  --font:      'Outfit', sans-serif;
+  --mono:      'DM Mono', monospace;
+  --r:         12px;
+  --r-sm:      8px;
+}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--mono);
-    min-height: 100vh;
-    overflow-x: hidden;
-    background-image:
-      radial-gradient(ellipse 60% 40% at 50% -10%, rgba(232,33,39,0.06) 0%, transparent 70%),
-      repeating-linear-gradient(0deg, transparent, transparent 39px, var(--text-muted) 39px, var(--text-muted) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, var(--text-muted) 39px, var(--text-muted) 40px);
-    background-size: 100% 100%, 40px 40px, 40px 40px;
-  }
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
 
-  /* ─── TOPBAR ─── */
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 24px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(8,11,15,0.92);
-    backdrop-filter: blur(12px);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+}
 
-  .topbar-left { display: flex; align-items: center; gap: 16px; }
+/* ── HEADER ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.header-left { display: flex; flex-direction: column; gap: 2px; }
+.app-title { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+.app-sub   { font-size: 12px; color: var(--gray); font-weight: 400; }
 
-  .logo {
-    font-family: var(--display);
-    font-size: 15px;
-    font-weight: 900;
-    letter-spacing: 0.2em;
-    color: var(--accent);
-    text-shadow: var(--glow-red);
-  }
+.ble-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--s1);
+  color: var(--gray);
+  -webkit-appearance: none;
+}
+.ble-btn:active   { transform: scale(0.96); }
+.ble-btn.connected {
+  background: var(--green-soft);
+  color: var(--green);
+  border-color: rgba(62,224,127,0.25);
+}
+.ble-btn:disabled { opacity: 0.4; }
 
-  .logo span { color: var(--text-dim); font-weight: 400; }
+.ble-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gray-dim);
+  flex-shrink: 0;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.ble-dot.connected  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.ble-dot.connecting { background: #f0a500; animation: blink 0.8s infinite; }
+.ble-dot.error      { background: var(--red); }
 
-  .hw-badge {
-    font-family: var(--ui);
-    font-size: 10px;
-    padding: 3px 8px;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    letter-spacing: 0.1em;
-    border-radius: 2px;
-  }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
-  .ble-status {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: var(--ui);
-    font-size: 11px;
-    letter-spacing: 0.05em;
-  }
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg);
+}
+.tab {
+  flex: 1;
+  padding: 11px 0 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+  user-select: none;
+}
+.tab.active { color: var(--white); border-bottom-color: var(--red); }
 
-  .status-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--text-muted);
-    transition: background 0.3s, box-shadow 0.3s;
-    flex-shrink: 0;
-  }
-  .status-dot.connected   { background: var(--green); box-shadow: var(--glow-green); }
-  .status-dot.connecting  { background: var(--amber); box-shadow: var(--glow-amber); animation: blink 0.8s infinite; }
-  .status-dot.error       { background: var(--accent); box-shadow: var(--glow-red); }
+/* ── PANELS ── */
+.panel { display: none; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.panel.active { display: flex; flex-direction: column; }
 
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+/* ── CONTROLS ── */
+.controls-panel { padding: 0 0 24px; }
 
-  #status-label { color: var(--text-dim); transition: color 0.3s; }
-  #status-label.connected  { color: var(--green); }
-  #status-label.connecting { color: var(--amber); }
-  #status-label.error      { color: var(--accent); }
+.status-strip {
+  display: none;
+  gap: 8px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.status-strip.visible { display: flex; }
 
-  .connect-btn {
-    font-family: var(--display);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    padding: 8px 18px;
-    border: 1px solid var(--accent);
-    background: transparent;
-    color: var(--accent);
-    cursor: pointer;
-    transition: all 0.2s;
-    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
-    position: relative;
-    overflow: hidden;
-  }
-  .connect-btn::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: var(--accent);
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-  .connect-btn:hover::before { opacity: 0.12; }
-  .connect-btn:hover { box-shadow: var(--glow-red); }
-  .connect-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-  .connect-btn.connected {
-    border-color: var(--green); color: var(--green);
-  }
-  .connect-btn.connected:hover { box-shadow: var(--glow-green); }
+.status-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: var(--s1);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray);
+  transition: all 0.25s;
+}
+.status-chip .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gray-dim);
+  transition: background 0.25s, box-shadow 0.25s;
+}
+.status-chip.on { color: var(--white); border-color: var(--border2); }
+.status-chip.on .dot { background: var(--green); box-shadow: 0 0 5px var(--green); }
 
-  /* ─── MAIN LAYOUT ─── */
-  .main {
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    grid-template-rows: auto 1fr;
-    gap: 0;
-    height: calc(100vh - 57px);
-    overflow: hidden;
-  }
+.section { padding: 18px 20px 0; }
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--gray-dim);
+  margin-bottom: 10px;
+}
 
-  @media (max-width: 900px) {
-    .main {
-      grid-template-columns: 1fr;
-      grid-template-rows: auto auto 300px;
-      height: auto;
-      overflow: visible;
-    }
-  }
+/* ── ROWS ── */
+.card-list {
+  background: var(--s1);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: opacity 0.25s;
+}
+.card-list.dimmed { opacity: 0.35; pointer-events: none; }
 
-  /* ─── LEFT PANEL ─── */
-  .left-panel {
-    display: flex;
-    flex-direction: column;
-    border-right: 1px solid var(--border);
-    overflow-y: auto;
-    padding: 20px;
-    gap: 20px;
-  }
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.row:last-child { border-bottom: none; }
+.row:active { background: var(--s2); }
 
-  /* ─── MASTER SECTION ─── */
-  .master-section {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border: 1px solid var(--accent-dim);
-    background: linear-gradient(135deg, rgba(232,33,39,0.06) 0%, transparent 60%);
-    position: relative;
-    overflow: hidden;
-  }
-  .master-section::before {
-    content: '';
-    position: absolute; left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: var(--accent);
-    box-shadow: var(--glow-red);
-  }
-  .master-section.off {
-    border-color: var(--border);
-    background: transparent;
-  }
-  .master-section.off::before { background: var(--text-muted); box-shadow: none; }
+.row-icon { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
+.row-text { flex: 1; min-width: 0; }
+.row-name {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row-desc { font-size: 11px; color: var(--gray); line-height: 1.4; }
 
-  .master-info { display: flex; flex-direction: column; gap: 4px; }
-  .master-label {
-    font-family: var(--display);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    color: var(--text-dim);
-  }
-  .master-desc { font-size: 11px; color: var(--text-dim); max-width: 300px; }
+/* ── TOGGLE ── */
+.toggle { position: relative; width: 48px; height: 28px; flex-shrink: 0; }
+.toggle input { display: none; }
+.toggle-track {
+  position: absolute; inset: 0; border-radius: 14px;
+  background: var(--s3); cursor: pointer; transition: background 0.25s;
+}
+.toggle-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #888;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  transition: transform 0.25s cubic-bezier(.4,0,.2,1), background 0.25s;
+  pointer-events: none;
+}
+.toggle input:checked ~ .toggle-track  { background: var(--red); }
+.toggle input:checked ~ .toggle-thumb  { transform: translateX(20px); background: #fff; }
+.toggle.green  input:checked ~ .toggle-track { background: var(--green); }
+.toggle.danger input:checked ~ .toggle-track { background: #c0392b; }
 
-  /* ─── SECTION HEADER ─── */
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: var(--ui);
-    font-size: 10px;
-    letter-spacing: 0.15em;
-    color: var(--text-dim);
-    text-transform: uppercase;
-  }
-  .section-header::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
+/* ── PASSTHROUGH NOTICE ── */
+.notice {
+  display: none;
+  margin: 10px 20px 0;
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  background: var(--s1);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--gray);
+}
+.notice.visible { display: block; }
 
-  /* ─── FEATURE CARDS GRID ─── */
-  .cards-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
+/* ── CONNECT PROMPT ── */
+.connect-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 60px 20px;
+  color: var(--gray-dim);
+}
+.connect-prompt .icon { font-size: 38px; margin-bottom: 6px; }
+.connect-prompt p { font-size: 13px; text-align: center; line-height: 1.5; }
 
-  .feature-card {
-    border: 1px solid var(--border);
-    padding: 16px;
-    background: var(--surface);
-    position: relative;
-    transition: border-color 0.3s, opacity 0.3s;
-    cursor: default;
-    overflow: hidden;
-  }
-  .feature-card::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: var(--green);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s;
-  }
-  .feature-card.active {
-    border-color: var(--green-dim);
-    background: linear-gradient(135deg, rgba(0,229,160,0.04) 0%, transparent 70%);
-  }
-  .feature-card.active::before {
-    content: '';
-    position: absolute; left: 0; top: 0; bottom: 0;
-    width: 2px;
-    background: var(--green);
-    box-shadow: var(--glow-green);
-  }
-  .feature-card.disabled-card {
-    opacity: 0.35;
-    pointer-events: none;
-  }
-  .feature-card.danger.active {
-    border-color: rgba(232,33,39,0.4);
-    background: linear-gradient(135deg, rgba(232,33,39,0.06) 0%, transparent 70%);
-  }
-  .feature-card.danger.active::before { background: var(--accent); box-shadow: var(--glow-red); }
+/* ── NO BLE ── */
+.no-ble {
+  display: none;
+  margin: 14px 20px 0;
+  padding: 11px 14px;
+  background: var(--red-soft);
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(232,33,39,0.3);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
 
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 10px;
-  }
+/* ── LOG PANEL ── */
+.log-panel { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
-  .card-icon {
-    font-size: 18px;
-    line-height: 1;
-    filter: grayscale(1) brightness(0.5);
-    transition: filter 0.3s;
-  }
-  .feature-card.active .card-icon { filter: none; }
+.log-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 5;
+}
+.log-count  { font-size: 11px; color: var(--gray); }
+.log-clear  {
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--red);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+}
 
-  .card-title {
-    font-family: var(--display);
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    transition: color 0.3s;
-  }
-  .feature-card.active .card-title { color: var(--green); }
-  .feature-card.danger.active .card-title { color: var(--accent); }
+.log-entries { padding: 4px 0 40px; }
 
-  .card-desc {
-    font-size: 10px;
-    color: var(--text-dim);
-    line-height: 1.5;
-    margin-bottom: 12px;
-  }
+.log-entry {
+  padding: 6px 20px;
+  border-bottom: 1px solid rgba(42,42,42,0.5);
+  animation: logIn 0.15s ease;
+}
+@keyframes logIn { from{opacity:0} to{opacity:1} }
 
-  .card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+.log-ts {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--gray-dim);
+  display: block;
+  margin-bottom: 2px;
+}
+.log-text {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.55;
+  word-break: break-all;
+  color: #aaa;
+}
+.log-text .tag     { font-weight: 500; }
+.t-sistem          { color: #7eb3d4; }
+.t-telem           { color: #c9a96e; }
+.t-ble             { color: #9dc4e8; }
+.t-err             { color: var(--red); }
+.val               { color: var(--white); }
+.val-on            { color: var(--green); font-weight: 500; }
+.val-off           { color: var(--gray); }
+.val-warn          { color: #f0a500; }
 
-  .card-state-label {
-    font-family: var(--ui);
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    color: var(--text-muted);
-    transition: color 0.3s;
-  }
-  .feature-card.active .card-state-label { color: var(--green); }
-  .feature-card.danger.active .card-state-label { color: var(--accent); }
-
-  /* ─── TOGGLE SWITCH ─── */
-  .toggle {
-    position: relative;
-    width: 40px;
-    height: 20px;
-    flex-shrink: 0;
-  }
-  .toggle input { opacity: 0; width: 0; height: 0; }
-  .toggle-track {
-    position: absolute; inset: 0;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 0;
-    cursor: pointer;
-    transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
-    clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%);
-  }
-  .toggle-track::before {
-    content: '';
-    position: absolute;
-    width: 14px; height: 14px;
-    left: 2px; top: 2px;
-    background: var(--text-muted);
-    transition: transform 0.25s, background 0.25s;
-    clip-path: polygon(2px 0%, 100% 0%, calc(100% - 2px) 100%, 0% 100%);
-  }
-  .toggle input:checked + .toggle-track {
-    background: rgba(0,229,160,0.1);
-    border-color: var(--green);
-    box-shadow: var(--glow-green);
-  }
-  .toggle input:checked + .toggle-track::before {
-    transform: translateX(20px);
-    background: var(--green);
-  }
-  .toggle.danger input:checked + .toggle-track {
-    background: rgba(232,33,39,0.1);
-    border-color: var(--accent);
-    box-shadow: var(--glow-red);
-  }
-  .toggle.danger input:checked + .toggle-track::before { background: var(--accent); }
-
-  /* ─── SPEED PROFILE (only display, read-only) ─── */
-  .telemetry-row {
-    display: flex;
-    gap: 12px;
-  }
-  .telem-chip {
-    flex: 1;
-    padding: 12px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .telem-label {
-    font-family: var(--ui);
-    font-size: 9px;
-    letter-spacing: 0.12em;
-    color: var(--text-dim);
-    text-transform: uppercase;
-  }
-  .telem-value {
-    font-family: var(--display);
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--amber);
-    text-shadow: var(--glow-amber);
-    letter-spacing: 0.05em;
-  }
-  .telem-sub {
-    font-size: 9px;
-    color: var(--text-muted);
-  }
-
-  /* ─── RIGHT PANEL ─── */
-  .right-panel {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  /* ─── TRAFFIC CHART ─── */
-  .chart-section {
-    padding: 14px 16px 10px;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-  .chart-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  .chart-title {
-    font-family: var(--ui);
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    color: var(--text-dim);
-    text-transform: uppercase;
-  }
-  .chart-live {
-    font-size: 9px;
-    color: var(--accent);
-    display: flex; align-items: center; gap: 4px;
-  }
-  .chart-live::before {
-    content: '';
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: var(--glow-red);
-    animation: blink 1.2s infinite;
-  }
-
-  canvas#trafficChart {
-    width: 100% !important;
-    height: 80px !important;
-    display: block;
-  }
-
-  /* ─── LOG CONSOLE ─── */
-  .log-section {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .log-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-  .log-title {
-    font-family: var(--ui);
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    color: var(--text-dim);
-    text-transform: uppercase;
-  }
-  .log-clear-btn {
-    font-family: var(--mono);
-    font-size: 9px;
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    cursor: pointer;
-    padding: 3px 8px;
-    transition: all 0.2s;
-    letter-spacing: 0.05em;
-  }
-  .log-clear-btn:hover { border-color: var(--text-dim); color: var(--text); }
-
-  .log-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px 16px;
-    font-size: 10.5px;
-    line-height: 1.6;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-  .log-body::-webkit-scrollbar { width: 4px; }
-  .log-body::-webkit-scrollbar-track { background: transparent; }
-  .log-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  .log-entry {
-    display: flex;
-    gap: 10px;
-    padding: 3px 0;
-    border-bottom: 1px solid rgba(30,45,61,0.4);
-    animation: fadeIn 0.25s ease;
-  }
-  @keyframes fadeIn { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
-
-  .log-ts {
-    color: var(--text-muted);
-    white-space: nowrap;
-    flex-shrink: 0;
-    font-size: 10px;
-  }
-  .log-msg { flex: 1; }
-  .log-msg.info    { color: var(--text); }
-  .log-msg.success { color: var(--green); }
-  .log-msg.warn    { color: var(--amber); }
-  .log-msg.error   { color: var(--accent); }
-  .log-msg.system  { color: var(--text-dim); }
-  .log-msg.notify  { color: #7eb8f0; }
-
-  /* ─── NO BLE SUPPORT ─── */
-  .no-ble-banner {
-    display: none;
-    background: rgba(232,33,39,0.08);
-    border: 1px solid var(--accent);
-    padding: 12px 16px;
-    font-size: 11px;
-    color: var(--text);
-    line-height: 1.5;
-    margin: 0 20px;
-  }
-  .no-ble-banner b { color: var(--accent); }
-
-  /* ─── DISCONNECTED OVERLAY ─── */
-  .disconnected-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(8,11,15,0.7);
-    backdrop-filter: blur(3px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    pointer-events: none;
-    opacity: 1;
-    transition: opacity 0.4s;
-    z-index: 10;
-  }
-  .disconnected-overlay.hidden { opacity: 0; pointer-events: none; }
-  .overlay-text {
-    font-family: var(--display);
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    color: var(--text-dim);
-  }
-  .overlay-icon { font-size: 32px; filter: grayscale(1) brightness(0.4); }
-
-  /* ─── SYNC PULSE ─── */
-  @keyframes syncPulse {
-    0%   { box-shadow: 0 0 0 0 rgba(0,229,160,0.5); }
-    70%  { box-shadow: 0 0 0 10px rgba(0,229,160,0); }
-    100% { box-shadow: 0 0 0 0 rgba(0,229,160,0); }
-  }
-  .syncing { animation: syncPulse 1s ease 2; }
-
-  /* ─── NOTIFICATION FLASH ─── */
-  @keyframes flash {
-    0%   { background: rgba(0,229,160,0.15); }
-    100% { background: transparent; }
-  }
-  .feature-card.flash-update { animation: flash 0.5s ease; }
-
-  /* ─── BOTTOM BAR ─── */
-  .bottom-bar {
-    padding: 6px 24px;
-    border-top: 1px solid var(--border);
-    font-size: 9px;
-    color: var(--text-muted);
-    display: flex;
-    gap: 20px;
-    letter-spacing: 0.05em;
-    background: rgba(8,11,15,0.8);
-  }
-  .bottom-bar span { color: var(--text-dim); }
-
-  /* ─── SCANNING animation ─── */
-  @keyframes scanline {
-    from { transform: translateY(-100%); }
-    to   { transform: translateY(100vh); }
-  }
-  .scanline {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(transparent, rgba(232,33,39,0.15), transparent);
-    pointer-events: none;
-    animation: scanline 4s linear infinite;
-    z-index: 9999;
-  }
+::-webkit-scrollbar { width: 0; }
 </style>
 </head>
 <body>
+<div class="app">
 
-<div class="scanline"></div>
+  <header>
+    <div class="header-left">
+      <div class="app-title">CAN Node</div>
+      <div class="app-sub">Tesla HW4 · ESP32</div>
+    </div>
+    <button class="ble-btn" id="ble-btn" onclick="handleBleToggle()">
+      <span class="ble-dot" id="ble-dot"></span>
+      <span id="ble-label">Connetti</span>
+    </button>
+  </header>
 
-<!-- ─── TOPBAR ─── -->
-<header class="topbar">
-  <div class="topbar-left">
-    <div class="logo">TESLA<span> ∕ </span>CAN<span>-NODE</span></div>
-    <div class="hw-badge">HW4 · ESP32 · FreeRTOS</div>
+  <div class="no-ble" id="no-ble">
+    Web Bluetooth non supportato. Usa Chrome o Edge su Android o Desktop.
   </div>
-  <div class="ble-status">
-    <div class="status-dot" id="dot"></div>
-    <span id="status-label">DISCONNESSO</span>
-    <button class="connect-btn" id="ble-btn" onclick="handleBleToggle()">CONNETTI BLE</button>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('controls',this)">Controlli</div>
+    <div class="tab" onclick="switchTab('log',this)">
+      Seriale<span id="log-badge" style="display:none;color:var(--red);"> ●</span>
+    </div>
   </div>
-</header>
 
-<!-- ─── NO BLE SUPPORT ─── -->
-<div class="no-ble-banner" id="no-ble-banner">
-  <b>⚠ Web Bluetooth non supportato.</b> Usa Chrome/Edge su Desktop o Android (non iOS/Safari).
-</div>
+  <!-- ── CONTROLS ── -->
+  <div class="panel active controls-panel" id="panel-controls">
 
-<!-- ─── MAIN ─── -->
-<div class="main">
-
-  <!-- ─── LEFT PANEL ─── -->
-  <div class="left-panel" style="position:relative;">
-    <div class="disconnected-overlay" id="overlay">
-      <div class="overlay-icon">📡</div>
-      <div class="overlay-text">IN ATTESA CONNESSIONE BLE</div>
+    <div class="status-strip" id="status-strip">
+      <div class="status-chip" id="chip-fsd-ui"><span class="dot"></span>Semafori UI</div>
+      <div class="status-chip on" id="chip-speed"><span class="dot"></span><span id="chip-speed-val">—</span></div>
     </div>
 
-    <!-- MASTER TOGGLE -->
-    <div class="master-section off" id="master-card">
-      <div class="master-info">
-        <div class="master-label">◼ MASTER SWITCH</div>
-        <div class="master-desc">Abilita/disabilita tutte le modifiche attive sul CAN Bus. In OFF il modulo opera in pass-through trasparente.</div>
-      </div>
-      <label class="toggle" id="toggle-master">
-        <input type="checkbox" id="chk-master" onchange="sendCmd(this.checked?'1':'0','master')">
-        <div class="toggle-track"></div>
-      </label>
-    </div>
-
-    <!-- TELEMETRIA LIVE -->
-    <div>
-      <div class="section-header">Telemetria Live</div>
-      <div class="telemetry-row" style="margin-top:10px;">
-        <div class="telem-chip">
-          <div class="telem-label">FSD su Schermo</div>
-          <div class="telem-value" id="tval-fsd-ui">—</div>
-          <div class="telem-sub">Lettura UI Tesla</div>
-        </div>
-        <div class="telem-chip">
-          <div class="telem-label">Profilo Velocità</div>
-          <div class="telem-value" id="tval-speed">—</div>
-          <div class="telem-sub">Da follow-distance</div>
-        </div>
-        <div class="telem-chip">
-          <div class="telem-label">Evento BLE</div>
-          <div class="telem-value" id="tval-events" style="color:var(--text-dim);">0</div>
-          <div class="telem-sub">Notifiche ricevute</div>
+    <!-- Master -->
+    <div class="section">
+      <div class="section-label">Master</div>
+      <div class="card-list">
+        <div class="row">
+          <div class="row-icon">⚡</div>
+          <div class="row-text">
+            <div class="row-name">Modulo Attivo</div>
+            <div class="row-desc">OFF = pass-through trasparente</div>
+          </div>
+          <label class="toggle" onclick="event.stopPropagation()">
+            <input type="checkbox" id="chk-master" onchange="sendCmd(this.checked?'1':'0')">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
         </div>
       </div>
+      <div class="notice" id="notice-passthrough">⏸ Pass-through attivo — nessuna modifica al bus</div>
     </div>
 
-    <!-- FEATURE CARDS -->
-    <div>
-      <div class="section-header">Funzionalità Attive</div>
-      <div class="cards-grid" style="margin-top:10px;" id="cards-grid">
+    <!-- Features -->
+    <div class="section" style="padding-top:16px;">
+      <div class="section-label">Funzionalità</div>
+      <div class="card-list dimmed" id="feature-list">
 
-        <!-- FSD -->
-        <div class="feature-card disabled-card" id="card-fsd">
-          <div class="card-header">
-            <div class="card-icon">🚦</div>
+        <div class="row">
+          <div class="row-icon">🚦</div>
+          <div class="row-text">
+            <div class="row-name">FSD Injection</div>
+            <div class="row-desc">Bit 46, 59, 60 — richiede Semafori su UI</div>
           </div>
-          <div class="card-title">FSD INJECTION</div>
-          <div class="card-desc">Abilita bit 46, 59, 60 (FSD Enable, FSD V14, Emergency Vehicle). Richiede "Controllo semafori" attivo su UI.</div>
-          <div class="card-footer">
-            <div class="card-state-label" id="lbl-fsd">INATTIVO</div>
-            <label class="toggle" id="toggle-fsd">
-              <input type="checkbox" id="chk-fsd" onchange="sendCmd(this.checked?'f':'g','fsd')">
-              <div class="toggle-track"></div>
-            </label>
-          </div>
+          <label class="toggle" onclick="event.stopPropagation()">
+            <input type="checkbox" id="chk-fsd" onchange="sendCmd(this.checked?'f':'g')">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
         </div>
 
-        <!-- NAG -->
-        <div class="feature-card disabled-card" id="card-nag">
-          <div class="card-header">
-            <div class="card-icon">🙌</div>
+        <div class="row">
+          <div class="row-icon">🙌</div>
+          <div class="row-text">
+            <div class="row-name">Nag Suppression</div>
+            <div class="row-desc">Silenzia "mani sul volante"</div>
           </div>
-          <div class="card-title">NAG SUPPRESSION</div>
-          <div class="card-desc">Soppressione richieste "mani sul volante". Indipendente da FSD, attivo finché mod master è ON.</div>
-          <div class="card-footer">
-            <div class="card-state-label" id="lbl-nag">INATTIVO</div>
-            <label class="toggle" id="toggle-nag">
-              <input type="checkbox" id="chk-nag" onchange="sendCmd(this.checked?'n':'m','nag')">
-              <div class="toggle-track"></div>
-            </label>
-          </div>
+          <label class="toggle" onclick="event.stopPropagation()">
+            <input type="checkbox" id="chk-nag" onchange="sendCmd(this.checked?'n':'m')">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
         </div>
 
-        <!-- ISA -->
-        <div class="feature-card disabled-card" id="card-isa">
-          <div class="card-header">
-            <div class="card-icon">🔇</div>
+        <div class="row">
+          <div class="row-icon">🔇</div>
+          <div class="row-text">
+            <div class="row-name">ISA Chimes</div>
+            <div class="row-desc">Muta avvisi limite velocità (ID 921)</div>
           </div>
-          <div class="card-title">ISA CHIMES MUTE</div>
-          <div class="card-desc">Sopprime avvisi acustici limite velocità (bit 5 byte 1, ID 921) con ricalcolo checksum.</div>
-          <div class="card-footer">
-            <div class="card-state-label" id="lbl-isa">NORMALE</div>
-            <label class="toggle" id="toggle-isa">
-              <input type="checkbox" id="chk-isa" onchange="sendCmd(this.checked?'2':'3','isa')">
-              <div class="toggle-track"></div>
-            </label>
-          </div>
+          <label class="toggle" onclick="event.stopPropagation()">
+            <input type="checkbox" id="chk-isa" onchange="sendCmd(this.checked?'2':'3')">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
         </div>
 
-        <!-- STRESS TEST -->
-        <div class="feature-card disabled-card danger" id="card-stress">
-          <div class="card-header">
-            <div class="card-icon">⚗️</div>
+        <div class="row">
+          <div class="row-icon">⚗️</div>
+          <div class="row-text">
+            <div class="row-name">Stress Test</div>
+            <div class="row-desc" style="color:rgba(232,33,39,0.75);">Solo a banco — non con auto collegata</div>
           </div>
-          <div class="card-title">STRESS TEST</div>
-          <div class="card-desc" style="color:rgba(232,33,39,0.7);">Simulatore traffico CAN interno. <b>NON usare con auto collegata.</b></div>
-          <div class="card-footer">
-            <div class="card-state-label" id="lbl-stress">INATTIVO</div>
-            <label class="toggle danger" id="toggle-stress">
-              <input type="checkbox" id="chk-stress" onchange="handleStressToggle(this)">
-              <div class="toggle-track"></div>
-            </label>
-          </div>
+          <label class="toggle danger" onclick="event.stopPropagation()">
+            <input type="checkbox" id="chk-stress" onchange="handleStress(this)">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
         </div>
 
       </div>
     </div>
-  </div><!-- /left-panel -->
 
-  <!-- ─── RIGHT PANEL ─── -->
-  <div class="right-panel">
-
-    <!-- TRAFFIC CHART -->
-    <div class="chart-section">
-      <div class="chart-header">
-        <div class="chart-title">Attività BLE Notifications</div>
-        <div class="chart-live" id="live-indicator" style="display:none">LIVE</div>
-      </div>
-      <canvas id="trafficChart"></canvas>
+    <div class="connect-prompt" id="connect-prompt">
+      <div class="icon">📡</div>
+      <p>Connetti il dispositivo BLE<br>per iniziare</p>
     </div>
 
-    <!-- LOG -->
-    <div class="log-section">
-      <div class="log-header">
-        <div class="log-title">⬛ Console Log</div>
-        <button class="log-clear-btn" onclick="clearLogs()">CLEAR</button>
-      </div>
-      <div class="log-body" id="log-body">
-        <div class="log-entry">
-          <span class="log-ts">—</span>
-          <span class="log-msg system">Sistema pronto. In attesa connessione BLE...</span>
-        </div>
-      </div>
+  </div>
+
+  <!-- ── LOG PANEL ── -->
+  <div class="panel log-panel" id="panel-log">
+    <div class="log-toolbar">
+      <span class="log-count" id="log-count">0 righe</span>
+      <button class="log-clear" onclick="clearLogs()">Cancella</button>
     </div>
-  </div><!-- /right-panel -->
+    <div class="log-entries" id="log-entries"></div>
+  </div>
 
-</div><!-- /main -->
-
-<div class="bottom-bar">
-  <span>SVC UUID:</span> abcd0001-…-12345678
-  <span>CHR UUID:</span> abcd0002-…-12345678
-  <span>BAUD:</span> 115200
-  <span id="last-sync">SYNC: mai</span>
 </div>
 
 <script>
-/* ═══════════════════════════════════════════════
-   CONSTANTS
-═══════════════════════════════════════════════ */
-const SERVICE_UUID = 'abcd0001-1234-5678-90ab-cdef12345678';
-const CHAR_UUID    = 'abcd0002-1234-5678-90ab-cdef12345678';
+const SVC  = 'abcd0001-1234-5678-90ab-cdef12345678';
+const CHAR = 'abcd0002-1234-5678-90ab-cdef12345678';
+const SPEED_MAP = {0:'Max',1:'Normal',2:'Hurry',3:'Chill',4:'Sloth'};
 
-const SPEED_PROFILES = ['CHILL', 'NORMAL', 'HURRY', 'MAX', 'SLOTH'];
+let ble = { device:null, char:null, connected:false };
+let devState = null;
+let logCount = 0;
+let activeTab = 'controls';
 
-/* ═══════════════════════════════════════════════
-   STATE
-═══════════════════════════════════════════════ */
-let bleDevice       = null;
-let bleChar         = null;
-let isConnected     = false;
-let isSyncing       = false;
-let notifyCount     = 0;
-let pendingCmd      = null; // { cmd, field } waiting for ack
-
-// State from device: [master, fsd, nag, isa, stress]
-let devState = { master:false, fsd:false, nag:false, isa:false, stress:false };
-
-/* ═══════════════════════════════════════════════
-   CHART
-═══════════════════════════════════════════════ */
-const MAX_POINTS = 40;
-let chartData = new Array(MAX_POINTS).fill(0);
-let chartCtx;
-
-function initChart() {
-  const canvas = document.getElementById('trafficChart');
-  chartCtx = canvas.getContext('2d');
-  drawChart();
-}
-
-function pushChartPoint(val) {
-  chartData.push(val);
-  if (chartData.length > MAX_POINTS) chartData.shift();
-  drawChart();
-}
-
-function drawChart() {
-  const canvas = document.getElementById('trafficChart');
-  const w = canvas.offsetWidth;
-  const h = canvas.offsetHeight;
-  canvas.width  = w;
-  canvas.height = h;
-  const ctx = chartCtx;
-
-  ctx.clearRect(0, 0, w, h);
-
-  const max = Math.max(...chartData, 1);
-  const step = w / (MAX_POINTS - 1);
-
-  // Grid lines
-  ctx.strokeStyle = 'rgba(30,45,61,0.6)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) {
-    const y = h - (i / 4) * h;
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+/* ── TABS ── */
+function switchTab(tab, el) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'log') {
+    document.getElementById('log-badge').style.display = 'none';
+    requestAnimationFrame(() => {
+      const lp = document.getElementById('panel-log');
+      lp.scrollTop = lp.scrollHeight;
+    });
   }
-
-  // Fill gradient
-  const grad = ctx.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, 'rgba(0,229,160,0.25)');
-  grad.addColorStop(1, 'rgba(0,229,160,0.01)');
-
-  ctx.beginPath();
-  chartData.forEach((v, i) => {
-    const x = i * step;
-    const y = h - (v / max) * (h - 4) - 2;
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  });
-  ctx.lineTo((MAX_POINTS - 1) * step, h);
-  ctx.lineTo(0, h);
-  ctx.closePath();
-  ctx.fillStyle = grad;
-  ctx.fill();
-
-  // Line
-  ctx.beginPath();
-  chartData.forEach((v, i) => {
-    const x = i * step;
-    const y = h - (v / max) * (h - 4) - 2;
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  });
-  ctx.strokeStyle = isConnected ? '#00e5a0' : '#1e2d3d';
-  ctx.lineWidth   = 1.5;
-  ctx.shadowColor = '#00e5a0';
-  ctx.shadowBlur  = isConnected ? 6 : 0;
-  ctx.stroke();
-  ctx.shadowBlur  = 0;
 }
 
-/* ═══════════════════════════════════════════════
-   LOG
-═══════════════════════════════════════════════ */
+/* ── TIMESTAMP ── */
 function ts() {
-  const now = new Date();
-  return now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3,'0');
+  const d  = new Date();
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  const ss = String(d.getSeconds()).padStart(2,'0');
+  const ms = String(d.getMilliseconds()).padStart(3,'0');
+  return `${hh}:${mm}:${ss}.${ms}`;
 }
 
-function log(msg, type = 'info') {
-  const body = document.getElementById('log-body');
-  const entry = document.createElement('div');
-  entry.className = 'log-entry';
-  entry.innerHTML = `<span class="log-ts">${ts()}</span><span class="log-msg ${type}">${msg}</span>`;
-  body.appendChild(entry);
-  // keep last 200 entries
-  while (body.children.length > 200) body.removeChild(body.firstChild);
-  body.scrollTop = body.scrollHeight;
+/* ── LOG ── */
+function appendLog(html) {
+  logCount++;
+  const el = document.createElement('div');
+  el.className = 'log-entry';
+  el.innerHTML = `<span class="log-ts">${ts()}</span><div class="log-text">${html}</div>`;
+  document.getElementById('log-entries').appendChild(el);
+  const entries = document.getElementById('log-entries');
+  while (entries.children.length > 500) entries.removeChild(entries.firstChild);
+  document.getElementById('log-count').textContent = logCount + ' righe';
+  if (activeTab === 'log') {
+    const lp = document.getElementById('panel-log');
+    lp.scrollTop = lp.scrollHeight;
+  } else {
+    document.getElementById('log-badge').style.display = 'inline';
+  }
 }
-
 function clearLogs() {
-  document.getElementById('log-body').innerHTML = '';
-  log('Log svuotato.', 'system');
+  document.getElementById('log-entries').innerHTML = '';
+  logCount = 0;
+  document.getElementById('log-count').textContent = '0 righe';
 }
 
-/* ═══════════════════════════════════════════════
-   UI STATE RENDER
-═══════════════════════════════════════════════ */
-function renderState(state, flash = false) {
-  devState = state;
-  const masterOn = state.master;
+/* ── LOG FORMATTERS — mirror ESP32 serial output ── */
+function tag(name, cls) { return `<span class="tag ${cls}">[${name}]</span>`; }
+function vOn(s)         { return `<span class="val-on">${s}</span>`; }
+function vOff(s)        { return `<span class="val-off">${s}</span>`; }
+function vWarn(s)       { return `<span class="val-warn">${s}</span>`; }
+function vVal(s)        { return `<span class="val">${s}</span>`; }
 
-  // Master card
-  const mc = document.getElementById('master-card');
-  mc.className = 'master-section' + (masterOn ? '' : ' off');
-  document.getElementById('chk-master').checked = masterOn;
+function logSistema(msg) { appendLog(`${tag('SISTEMA','t-sistem')} ${msg}`); }
+function logBleMsg(msg)  { appendLog(`${tag('BLE','t-ble')} ${msg}`); }
 
-  // Feature cards — only interactive if master ON
-  const features = ['fsd','nag','isa','stress'];
-  features.forEach(f => {
-    const card    = document.getElementById('card-' + f);
-    const chk     = document.getElementById('chk-' + f);
-    const lbl     = document.getElementById('lbl-' + f);
-    const isOn    = state[f];
-
-    // disable if master off
-    if (!masterOn) {
-      card.classList.add('disabled-card');
-      card.classList.remove('active');
-    } else {
-      card.classList.remove('disabled-card');
-    }
-
-    if (masterOn) {
-      if (isOn) {
-        card.classList.add('active');
-      } else {
-        card.classList.remove('active');
-      }
-    }
-
-    chk.checked = isOn;
-
-    // Labels
-    const labels = {
-      fsd:    isOn ? 'ATTIVO' : 'INATTIVO',
-      nag:    isOn ? 'ATTIVO' : 'INATTIVO',
-      isa:    isOn ? 'SILENZIATO' : 'NORMALE',
-      stress: isOn ? '⚠ SIMULATORE' : 'INATTIVO',
-    };
-    lbl.textContent = labels[f];
-
-    if (flash) {
-      card.classList.remove('flash-update');
-      void card.offsetWidth; // reflow
-      card.classList.add('flash-update');
-    }
-  });
-
-  // Telemetry
-  document.getElementById('tval-fsd-ui').textContent = state.fsd ? (state.fsd ? '●' : '○') : '—';
-  document.getElementById('tval-events').textContent  = notifyCount;
-
-  document.getElementById('last-sync').textContent = 'SYNC: ' + ts();
+// Mirrors: [TELEMETRIA] Fonte: X | Traffico: X msg/s | Stato Sistema: X | FSD su Schermo: X | FSD Mod: X | Nag Mod: X | Prof. Vel: X | Avvisi Acustici: X
+function logTelemetria(s) {
+  const fonte  = s.stress ? vWarn('SIMULATORE SINTETICO') : vVal('VEICOLO REALE');
+  const mod    = s.master ? vOn('ATTIVO') : vOff('DISATTIVATO');
+  const fsdUi  = s.fsdUI  ? vOn('ACCESO') : vOff('SPENTO');
+  const fsdMod = s.fsd    ? vOn('ATTIVO') : vOff('INATTIVO');
+  const nagMod = s.nag    ? vOn('ATTIVO') : vOff('INATTIVO');
+  const avvisi = s.isa    ? vWarn('SILENZIATI') : vOn('NORMALI');
+  const prof   = vVal(SPEED_MAP[s.speed] ?? s.speed);
+  appendLog(
+    `${tag('TELEMETRIA','t-telem')} ` +
+    `Fonte: ${fonte} | Stato Sistema: ${mod} | FSD su Schermo: ${fsdUi} | ` +
+    `FSD Mod: ${fsdMod} | Nag Mod: ${nagMod} | Prof. Vel: ${prof} | Avvisi Acustici: ${avvisi}`
+  );
 }
 
-/* ═══════════════════════════════════════════════
-   PARSE NOTIFY STRING "MFNIS"
-═══════════════════════════════════════════════ */
-function parseStateString(str) {
-  if (str.length < 5) return null;
+/* ── PARSE STATE STRING "MFNIS" ── */
+function parseState(str) {
+  if (!str || str.length < 5) return null;
   return {
-    master: str[0] === '1',
-    fsd:    str[1] === '1',
-    nag:    str[2] === '1',
-    isa:    str[3] === '1',
-    stress: str[4] === '1',
+    master: str[0]==='1',
+    fsd:    str[1]==='1',
+    nag:    str[2]==='1',
+    isa:    str[3]==='1',
+    stress: str[4]==='1',
+    fsdUI:  devState?.fsdUI ?? false,
+    speed:  devState?.speed ?? 1,
   };
 }
 
-/* ═══════════════════════════════════════════════
-   BLE COMMANDS
-═══════════════════════════════════════════════ */
-async function sendCmd(cmd, field) {
-  if (!isConnected || !bleChar) {
-    log(`[BLE] Impossibile inviare '${cmd}': non connesso.`, 'error');
-    return;
-  }
-  try {
-    const enc = new TextEncoder();
-    await bleChar.writeValueWithoutResponse(enc.encode(cmd));
-    log(`[CMD] Inviato: '${cmd}' → ${field.toUpperCase()}`, 'info');
-  } catch(e) {
-    log(`[ERR] writeValue fallito: ${e.message}`, 'error');
-  }
+/* ── RENDER UI ── */
+function renderUI(state) {
+  devState = state;
+  const on = state.master;
+
+  document.getElementById('chk-master').checked = on;
+  document.getElementById('notice-passthrough').classList.toggle('visible', !on);
+  document.getElementById('feature-list').classList.toggle('dimmed', !on);
+
+  document.getElementById('chk-fsd').checked    = state.fsd;
+  document.getElementById('chk-nag').checked    = state.nag;
+  document.getElementById('chk-isa').checked    = state.isa;
+  document.getElementById('chk-stress').checked = state.stress;
+
+  // Status chips
+  const strip = document.getElementById('status-strip');
+  strip.classList.toggle('visible', ble.connected);
+  document.getElementById('chip-fsd-ui').classList.toggle('on', state.fsdUI);
+  document.getElementById('chip-speed-val').textContent = SPEED_MAP[state.speed] ?? '—';
+
+  // Connect prompt
+  document.getElementById('connect-prompt').style.display = ble.connected ? 'none' : 'flex';
 }
 
-function handleStressToggle(chk) {
+/* ── BLE SEND ── */
+async function sendCmd(cmd) {
+  if (!ble.connected || !ble.char) return;
+  try { await ble.char.writeValueWithoutResponse(new TextEncoder().encode(cmd)); }
+  catch(e) { logBleMsg(`<span class="t-err">Errore invio '${cmd}': ${e.message}</span>`); }
+}
+
+function handleStress(chk) {
   if (chk.checked) {
-    const ok = confirm('⚠️ ATTENZIONE\n\nLo stress test genera traffico CAN sintetico.\nNon deve essere usato con il veicolo collegato.\n\nConfermi?');
+    const ok = confirm('⚠️ Stress Test\n\nGenerazione traffico CAN sintetico.\nNon usare con il veicolo collegato.\n\nConfermare?');
     if (!ok) { chk.checked = false; return; }
   }
-  sendCmd(chk.checked ? '4' : '5', 'stress');
+  sendCmd(chk.checked ? '4' : '5');
 }
 
-/* ═══════════════════════════════════════════════
-   BLE CONNECT / DISCONNECT
-═══════════════════════════════════════════════ */
-function setUIConnected(connected) {
-  isConnected = connected;
-  const dot   = document.getElementById('dot');
-  const lbl   = document.getElementById('status-label');
-  const btn   = document.getElementById('ble-btn');
-  const overlay = document.getElementById('overlay');
-  const live  = document.getElementById('live-indicator');
-
-  if (connected) {
-    dot.className = 'status-dot connected';
-    lbl.className = 'connected';
-    lbl.textContent = 'CONNESSO';
-    btn.className = 'connect-btn connected';
-    btn.textContent = 'DISCONNETTI';
-    overlay.classList.add('hidden');
-    live.style.display = 'flex';
-  } else {
-    dot.className = 'status-dot';
-    lbl.className = '';
-    lbl.textContent = 'DISCONNESSO';
-    btn.className = 'connect-btn';
-    btn.textContent = 'CONNETTI BLE';
-    overlay.classList.remove('hidden');
-    live.style.display = 'none';
-
-    // Reset UI
-    document.getElementById('tval-fsd-ui').textContent = '—';
-    document.getElementById('tval-speed').textContent  = '—';
-  }
-  drawChart();
-}
-
-async function handleBleToggle() {
-  if (isConnected && bleDevice) {
-    log('[BLE] Disconnessione richiesta dall\'utente.', 'warn');
-    bleDevice.gatt.disconnect();
-    return;
-  }
-
-  if (!navigator.bluetooth) {
-    document.getElementById('no-ble-banner').style.display = 'block';
-    log('[ERR] Web Bluetooth non supportato in questo browser.', 'error');
-    return;
-  }
-
-  const dot = document.getElementById('dot');
-  const lbl = document.getElementById('status-label');
-  dot.className = 'status-dot connecting';
-  lbl.className = 'connecting';
-  lbl.textContent = 'CONNESSIONE…';
-  document.getElementById('ble-btn').disabled = true;
-
-  log('[BLE] Scansione dispositivi...', 'system');
-
-  try {
-    bleDevice = await navigator.bluetooth.requestDevice({
-      filters: [{ name: 'Tesla-CAN-Node' }],
-      optionalServices: [SERVICE_UUID]
-    });
-
-    bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
-    log(`[BLE] Dispositivo trovato: ${bleDevice.name}`, 'success');
-
-    const server  = await bleDevice.gatt.connect();
-    log('[BLE] GATT server connesso.', 'success');
-
-    const service = await server.getPrimaryService(SERVICE_UUID);
-    bleChar       = await service.getCharacteristic(CHAR_UUID);
-    log('[BLE] Caratteristica acquisita.', 'success');
-
-    // Subscribe to notifications
-    await bleChar.startNotifications();
-    bleChar.addEventListener('characteristicvaluechanged', onNotify);
-    log('[BLE] Notifiche BLE attivate.', 'success');
-
-    // Read current state on connect (sync)
-    log('[SYNC] Lettura stato corrente dal dispositivo...', 'system');
-    try {
-      const value = await bleChar.readValue();
-      const str   = new TextDecoder().decode(value);
-      log(`[SYNC] Stato ricevuto: "${str}"`, 'notify');
-      const state = parseStateString(str);
-      if (state) {
-        renderState(state);
-        log('[SYNC] ✓ Interfaccia sincronizzata con stato dispositivo.', 'success');
-        // Pulse animation on cards
-        document.querySelectorAll('.feature-card').forEach(c => {
-          c.classList.add('syncing');
-          setTimeout(() => c.classList.remove('syncing'), 1200);
-        });
-      }
-    } catch(e) {
-      log(`[SYNC] Lettura iniziale non disponibile, attendo notifica: ${e.message}`, 'warn');
-    }
-
-    setUIConnected(true);
-    document.getElementById('ble-btn').disabled = false;
-
-  } catch(e) {
-    log(`[ERR] Connessione BLE fallita: ${e.message}`, 'error');
-    dot.className   = 'status-dot error';
-    lbl.className   = 'error';
-    lbl.textContent = 'ERRORE';
-    document.getElementById('ble-btn').disabled = false;
-    setTimeout(() => {
-      if (!isConnected) {
-        dot.className   = 'status-dot';
-        lbl.className   = '';
-        lbl.textContent = 'DISCONNESSO';
-      }
-    }, 3000);
-  }
+/* ── BLE EVENTS ── */
+function onNotify(event) {
+  const str = new TextDecoder().decode(event.target.value);
+  logBleMsg(`Stato notificato: ${vVal(str)} — M:${str[0]} F:${str[1]} N:${str[2]} I:${str[3]} S:${str[4]}`);
+  const state = parseState(str);
+  if (state) { renderUI(state); logTelemetria(state); }
 }
 
 function onDisconnected() {
-  log('[BLE] Connessione persa / dispositivo disconnesso.', 'warn');
-  bleChar = null;
-  setUIConnected(false);
-  document.getElementById('ble-btn').disabled = false;
-  pushChartPoint(0);
+  ble.connected = false;
+  ble.char = null;
+  setBleUI('disconnected');
+  logBleMsg('Client disconnesso.');
+  renderUI(devState ?? {master:false,fsd:false,nag:false,isa:false,stress:false,fsdUI:false,speed:1});
 }
 
-function onNotify(event) {
-  const value = event.target.value;
-  const str   = new TextDecoder().decode(value);
-  notifyCount++;
-
-  log(`[NOTIFY] Stato: "${str}" — M:${str[0]} F:${str[1]} N:${str[2]} I:${str[3]} S:${str[4]}`, 'notify');
-
-  const state = parseStateString(str);
-  if (state) {
-    renderState(state, true);
-  }
-
-  // Update chart with notification rate
-  pushChartPoint(notifyCount % 10 + 1); // activity pulse
-  document.getElementById('tval-events').textContent = notifyCount;
-}
-
-/* ═══════════════════════════════════════════════
-   CHART TICKER (keep chart animated when connected)
-═══════════════════════════════════════════════ */
-setInterval(() => {
-  if (isConnected) {
-    // Add idle heartbeat to chart if no notifications
-    // just redraw to keep it looking alive
-    drawChart();
-  }
-}, 1000);
-
-/* ═══════════════════════════════════════════════
-   INIT
-═══════════════════════════════════════════════ */
-window.addEventListener('load', () => {
-  initChart();
-
-  // Check BLE support
+/* ── BLE CONNECT ── */
+async function handleBleToggle() {
+  if (ble.connected && ble.device) { ble.device.gatt.disconnect(); return; }
   if (!navigator.bluetooth) {
-    document.getElementById('no-ble-banner').style.display = 'block';
-    log('[WARN] Web Bluetooth non supportato. Usa Chrome/Edge su Desktop o Android.', 'warn');
-  } else {
-    log('[SYS] Web Bluetooth disponibile. Pronto per la connessione.', 'system');
+    document.getElementById('no-ble').style.display = 'block';
+    logSistema('<span class="t-err">Web Bluetooth non disponibile.</span>');
+    return;
   }
 
-  log('[SYS] Dashboard Tesla CAN v1.0 avviata.', 'system');
-  log('[SYS] SVC: ' + SERVICE_UUID, 'system');
-  log('[SYS] CHR: ' + CHAR_UUID, 'system');
+  setBleUI('connecting');
+  logSistema('Scansione dispositivi BLE...');
 
-  window.addEventListener('resize', drawChart);
+  try {
+    ble.device = await navigator.bluetooth.requestDevice({
+      filters: [{name:'Tesla-CAN-Node'}],
+      optionalServices: [SVC]
+    });
+    ble.device.addEventListener('gattserverdisconnected', onDisconnected);
+    logBleMsg(`Dispositivo trovato: ${vVal(ble.device.name)}`);
+
+    const server  = await ble.device.gatt.connect();
+    logSistema('GATT server connesso.');
+    const service = await server.getPrimaryService(SVC);
+    ble.char      = await service.getCharacteristic(CHAR);
+    logSistema('Caratteristica acquisita.');
+
+    await ble.char.startNotifications();
+    ble.char.addEventListener('characteristicvaluechanged', onNotify);
+    logSistema('Notifiche BLE attivate.');
+
+    // Sync: read current state immediately on connect
+    logSistema('Sincronizzazione stato iniziale...');
+    try {
+      const raw   = await ble.char.readValue();
+      const str   = new TextDecoder().decode(raw);
+      logBleMsg(`Stato letto: ${vVal(str)}`);
+      const state = parseState(str);
+      if (state) {
+        renderUI(state);
+        logTelemetria(state);
+        logSistema(`Interfaccia ${vOn('sincronizzata')}.`);
+      }
+    } catch(e) {
+      logSistema(`Lettura iniziale non disponibile: ${vWarn('attendo notifica...')}`);
+    }
+
+    ble.connected = true;
+    setBleUI('connected');
+    logSistema(`Connessione Bluetooth a Basso Consumo (BLE) ${vOn('stabilita')}.`);
+    logSistema(`Schedulatore RTOS attivo. Operativita' ${vOn('iniziata')}.`);
+
+  } catch(e) {
+    setBleUI('error');
+    logSistema(`<span class="t-err">Connessione fallita: ${e.message}</span>`);
+    setTimeout(() => { if (!ble.connected) setBleUI('disconnected'); }, 2500);
+  }
+}
+
+/* ── BLE UI STATE ── */
+function setBleUI(state) {
+  const dot = document.getElementById('ble-dot');
+  const btn = document.getElementById('ble-btn');
+  const lbl = document.getElementById('ble-label');
+  btn.disabled  = (state === 'connecting');
+  dot.className = 'ble-dot ' + state;
+  const labels  = { connected:'Connesso', connecting:'Connessione…', disconnected:'Connetti', error:'Errore' };
+  lbl.textContent  = labels[state] ?? 'Connetti';
+  btn.className    = 'ble-btn' + (state==='connected'?' connected':'');
+}
+
+/* ── INIT ── */
+window.addEventListener('load', () => {
+  if (!navigator.bluetooth) {
+    document.getElementById('no-ble').style.display = 'block';
+    logSistema('<span class="t-err">Web Bluetooth non supportato in questo browser.</span>');
+  } else {
+    logSistema('Sistema pronto. Web Bluetooth disponibile.');
+    logSistema(`Avvio nodo CAN in corso...`);
+  }
+  renderUI({master:false,fsd:false,nag:false,isa:false,stress:false,fsdUI:false,speed:1});
 });
 </script>
 </body>

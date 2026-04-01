@@ -175,6 +175,17 @@ canvas { width: 100%; height: 100%; display: block; }
       <div id="profile-desc" class="profile-desc">Waiting for telemetry...</div>
     </section>
 
+    <section class="card" style="border-color: var(--accent-red);">
+      <div class="card-title" style="color: var(--accent-red);">🛠 Hardware Debugger (ESP32)</div>
+      <div class="profile-group">
+        <button class="prof-btn" onclick="sendCommand('d')" style="cursor: pointer;">🔍 Report CAN</button>
+        <button class="prof-btn" onclick="sendCommand('L')" style="cursor: pointer;">🎧 Filtri On/Off</button>
+        <button class="prof-btn" onclick="sendCommand('B')" style="cursor: pointer;">⚡ Bitrate</button>
+        <button class="prof-btn" onclick="sendCommand('R')" style="cursor: pointer;">🔄 Reboot</button>
+      </div>
+      <div class="profile-desc" style="color: #ff8a8a;">Usa questi strumenti se il grafico del traffico rimane a 0. I risultati appariranno nei System Logs in basso.</div>
+    </section>
+    
     <section class="card">
       <div class="card-header-flex">
         <button id="btn-master" class="master-pill" disabled>
